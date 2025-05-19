@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useShow } from '../contexts/ShowContext';
 
@@ -51,6 +51,15 @@ import {
 // Import our components
 import { CallerList } from '../components/callers/CallerList';
 import type { Caller } from '../contexts/ShowContext';
+
+// Extend the Caller type for UI purposes
+interface UICaller extends Omit<Caller, 'status'> {
+  phoneNumber: string;
+  waitTime: number;
+  isMuted: boolean;
+  isPriority: boolean;
+  status: 'waiting' | 'on-air' | 'completed' | 'rejected';
+}
 import { CallerDetails } from '../components/callers/CallerDetails';
 import { showNotification } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
@@ -162,7 +171,7 @@ export default function HostDashboard() {
   const currentShowName = currentShow || 'Untitled Show';
   
   const [activeTab, setActiveTab] = useState<string | null>('callers');
-  const [selectedCaller, setSelectedCaller] = useState<Caller | null>(null);
+  const [selectedCaller, setSelectedCaller] = useState<UICaller | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
   const [showName, setShowName] = useState('My Awesome Show');
   const [newCallerName, setNewCallerName] = useState('');
@@ -231,13 +240,18 @@ export default function HostDashboard() {
     showNotification({
       title: 'Caller Removed',
       message: 'Caller has been removed from the queue',
-      color: 'orange',
     });
   };
 
   const handleMuteToggle = (callerId: string, isMuted: boolean) => {
     // In a real app, this would update the caller's mute status via API
     console.log(`Caller ${callerId} muted: ${isMuted}`);
+    if (selectedCaller?.id === callerId) {
+      setSelectedCaller(prev => prev ? { 
+        ...prev, 
+        isMuted 
+      } : null);
+    }
   };
 
   const handlePromoteToLive = (callerId: string) => {
@@ -263,9 +277,33 @@ export default function HostDashboard() {
     console.log(`Added note to caller ${callerId}: ${note}`);
   };
 
-  const handleSelectCaller = (caller: Caller) => {
-    setSelectedCaller(caller);
-  };
+  const handleSelectCaller = useCallback((caller: Caller) => {
+    // Map the status to our UI status
+    let uiStatus: 'waiting' | 'on-air' | 'completed' | 'rejected';
+    switch (caller.status) {
+      case 'live':
+        uiStatus = 'on-air';
+        break;
+      case 'waiting':
+      case 'rejected':
+        uiStatus = caller.status;
+        break;
+      default:
+        uiStatus = 'completed';
+    }
+
+    // Create a new UI caller object
+    const uiCaller: UICaller = {
+      ...caller,
+      phoneNumber: caller.phone || 'Unknown',
+      waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
+      status: uiStatus,
+      isMuted: false,
+      isPriority: false
+    };
+    
+    setSelectedCaller(uiCaller);
+  }, []);
 
   // In a real app, we would set up WebRTC connections here
   useEffect(() => {
@@ -358,7 +396,7 @@ export default function HostDashboard() {
                   </Group>
                   <CallerList 
                     callers={allCallers}
-                    onSelectCaller={setSelectedCaller}
+                    onSelectCaller={(caller: Caller) => handleSelectCaller(caller)}
                     onMuteToggle={handleMuteToggle}
                     onPromoteToLive={handlePromoteToLive}
                     onEndCall={handleEndCall}

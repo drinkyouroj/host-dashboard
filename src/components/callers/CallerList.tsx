@@ -1,16 +1,26 @@
 import { useState } from 'react';
-import { Box, Text, Paper, Group, Avatar, Badge, ActionIcon, Tooltip } from '@mantine/core';
 import { 
-  IconPhone, 
+  Box, 
+  Paper, 
+  Text, 
+  Group, 
+  ActionIcon, 
+  Badge,
+  Stack,
+  Tooltip,
+  Avatar
+} from '@mantine/core';
+import { 
+  IconMicrophone, 
+  IconMicrophoneOff, 
+  IconPhoneCall, 
   IconPhoneOff, 
-  IconVolume, 
-  IconVolumeOff, 
   IconStar, 
   IconUserPlus,
-  IconMicrophone,
-  IconMicrophoneOff,
-  IconBroadcast,
-  IconPhoneCall
+  IconVolume,
+  IconVolumeOff,
+  IconPhone,
+  IconBroadcast
 } from '@tabler/icons-react';
 
 import type { Caller } from '../../contexts/ShowContext';
@@ -49,7 +59,11 @@ export function CallerList({
     const originalCaller = callers.find(c => c.id === uiCaller.id);
     if (originalCaller) {
       setSelectedCallerId(uiCaller.id);
-      onSelectCaller(originalCaller);
+      // Call the onSelectCaller with just the original caller data
+      onSelectCaller({
+        ...originalCaller,
+        // Ensure we're not passing any UI-specific properties
+      });
     }
   };
 
