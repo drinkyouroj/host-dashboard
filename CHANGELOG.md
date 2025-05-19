@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved UI/UX for better usability
 - Enhanced error handling and user feedback
 
+## [0.1.3] - 2025-05-19
+
+### Added
+- "Take Off Air" functionality to move callers back to the waiting queue
+- Visual distinction between "Take Off Air" and "Disconnect" actions
+- Better mobile responsiveness for call control buttons
+
+### Changed
+- Renamed "End Call" to "Disconnect" for clarity
+- Improved button layout and styling in the caller details panel
+- Enhanced type safety for caller status management
+
 ## [0.1.2] - 2025-05-19
 
 ### Fixed
