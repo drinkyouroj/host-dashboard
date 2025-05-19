@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Container, Title, Grid, Paper, Text, Button, Group } from '@mantine/core';
 import { CallerList } from '../components/callers/CallerList';
 import { CallerDetails } from '../components/callers/CallerDetails';
 import type { Caller } from '../contexts/ShowContext';
-import type { UICaller } from '../components/callers/CallerList';
+import type { UICaller } from '../types/caller';
 
 // Helper function to convert Caller to UICaller
 const toUICaller = (caller: Caller): UICaller => {
@@ -58,62 +58,73 @@ export function CallersTestPage() {
   const [callers, setCallers] = useState<UICaller[]>(mockCallers.map(toUICaller));
   const [selectedCaller, setSelectedCaller] = useState<UICaller | null>(null);
 
-  const handleSelectCaller = (caller: Caller) => {
-    setSelectedCaller(toUICaller(caller));
-  };
+  const handleSelectCaller = useCallback((caller: UICaller) => {
+    setSelectedCaller(caller);
+  }, []);
 
-  const handleMuteToggle = (callerId: string, isMuted: boolean) => {
-    // In a real app, this would call your API to update the mute status
-    console.log(`Caller ${callerId} muted: ${isMuted}`);
+  const handleMuteToggle = useCallback((callerId: string, isMuted: boolean) => {
+    setCallers(prevCallers => 
+      prevCallers.map(caller => 
+        caller.id === callerId 
+          ? { ...caller, isMuted }
+          : caller
+      )
+    );
     
-    // In a real app, this would call your API to update the mute status
-    console.log(`Caller ${callerId} muted: ${isMuted}`);
-  };
+    if (selectedCaller?.id === callerId) {
+      setSelectedCaller(prev => prev ? { ...prev, isMuted } : null);
+    }
+  }, [selectedCaller]);
 
-  const handlePromoteToLive = (callerId: string) => {
+  const handlePromoteToLive = useCallback((callerId: string) => {
     setCallers(prev => 
       prev.map(caller => {
         if (caller.id === callerId) {
-          return { ...caller, status: 'live' as const };
-        }
-        if (caller.status === 'live') {
-          return { ...caller, status: 'waiting' as const };
+          // Promote the selected caller to live
+          return { 
+            ...caller, 
+            status: 'live' as const, 
+            displayStatus: 'On Air' 
+          };
+        } else if (caller.status === 'live') {
+          // Demote any other live caller to waiting
+          return { 
+            ...caller, 
+            status: 'waiting' as const, 
+            displayStatus: 'Waiting' 
+          };
         }
         return caller;
       })
     );
     
+    // Update the selected caller if it's the one being promoted
     setSelectedCaller(prev => {
       if (!prev) return null;
       if (prev.id === callerId) {
-        return { ...prev, status: 'live' as const };
-      }
-      if (prev.status === 'live') {
-        return { ...prev, status: 'waiting' as const };
+        return { 
+          ...prev, 
+          status: 'live' as const, 
+          displayStatus: 'On Air' 
+        };
       }
       return prev;
     });
     
     // In a real app, this would connect the caller to the live show
     console.log(`Promoted caller ${callerId} to live`);
-  };
+  }, [selectedCaller]);
 
-  const handleEndCall = (callerId: string) => {
-    setCallers(prev => 
-      prev.map(caller => 
-        caller.id === callerId 
-          ? { ...caller, status: 'rejected' as const }
-          : caller
-      )
-    );
+  const handleEndCall = useCallback((callerId: string) => {
+    setCallers(prev => prev.filter(caller => caller.id !== callerId));
     
     if (selectedCaller?.id === callerId) {
-      setSelectedCaller(prev => prev ? { ...prev, status: 'rejected' as const } : null);
+      setSelectedCaller(null);
     }
     
     // In a real app, this would end the call
     console.log(`Ended call with ${callerId}`);
-  };
+  }, [selectedCaller]);
 
   const handleAddNote = (callerId: string, note: string) => {
     setCallers(prev => 

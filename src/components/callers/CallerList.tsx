@@ -23,14 +23,13 @@ import {
   IconBroadcast
 } from '@tabler/icons-react';
 
-import type { Caller } from '../../contexts/ShowContext';
-import type { UICaller, CallerStatus } from '../../types/caller';
+import type { UICaller } from '../../types/caller';
 
-export type { Caller, UICaller };
+export type { UICaller };
 
 interface CallerListProps {
   callers: UICaller[];
-  onSelectCaller: (caller: Caller) => void;
+  onSelectCaller: (caller: UICaller) => void;
   onMuteToggle: (callerId: string, isMuted: boolean) => void;
   onPromoteToLive: (callerId: string) => void;
   onEndCall: (callerId: string) => void;
@@ -46,15 +45,8 @@ export function CallerList({
   const [selectedCallerId, setSelectedCallerId] = useState<string | null>(null);
 
   const handleCallerClick = (uiCaller: UICaller) => {
-    // Find the original caller to get the full Caller object
-    const originalCaller = callers.find(c => c.id === uiCaller.id);
-    
-    if (originalCaller) {
-      setSelectedCallerId(uiCaller.id);
-      // Call the onSelectCaller with the original Caller data
-      // The parent component will handle the mapping to UICaller
-      onSelectCaller(originalCaller);
-    }
+    setSelectedCallerId(uiCaller.id);
+    onSelectCaller(uiCaller);
   };
   
   const handleMuteToggle = (e: React.MouseEvent, caller: UICaller) => {

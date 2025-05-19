@@ -306,6 +306,7 @@ export default function HostDashboard() {
   }, [moveToLive]);
 
   const handleEndCall = useCallback((callerId: string) => {
+    // Remove the caller from the list
     removeCaller(callerId);
     
     // Clean up local state
@@ -324,12 +325,15 @@ export default function HostDashboard() {
       setSelectedCaller(null);
     }
     
-    showNotification({
-      title: 'Call Ended',
-      message: 'Call has been ended',
-      color: 'blue',
-    });
-  }, [callerState.isMuted, callerState.isPriority, callerState.notes, removeCaller, selectedCaller, updateCallerState]);
+    const caller = allCallers.find(c => c.id === callerId);
+    if (caller) {
+      showNotification({
+        title: 'Call Ended',
+        message: `Call with ${caller.name} has been ended`,
+        color: 'blue',
+      });
+    }
+  }, [allCallers, callerState.isMuted, callerState.isPriority, callerState.notes, removeCaller, selectedCaller, updateCallerState]);
 
   const handleAddNote = useCallback((callerId: string, note: string) => {
     updateCallerState({
@@ -406,9 +410,9 @@ export default function HostDashboard() {
     return allCallers.map(caller => toUICaller(caller));
   }, [allCallers, toUICaller]);
 
-  const handleSelectCaller = useCallback((caller: Caller) => {
-    setSelectedCaller(toUICaller(caller));
-  }, [toUICaller]);
+  const handleSelectCaller = useCallback((caller: UICaller) => {
+    setSelectedCaller(caller);
+  }, []);
 
   // In a real app, we would set up WebRTC connections here
   useEffect(() => {
