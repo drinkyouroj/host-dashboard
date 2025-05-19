@@ -346,121 +346,67 @@ export default function HostDashboard() {
                     <IconScreenShare size={20} />
                   </ActionIcon>
                 </div>
-              </div>
-              
-              <Title order={4} mt="md">Live Participants</Title>
-              <Grid mt="md">
-                {liveCallers.map((caller) => (
-                  <Grid.Col key={caller.id} span={12} {...{ md: 6 } as GridColProps}>
-                    <CallerCard 
-                      caller={caller} 
-                      isLive 
-                      onReject={handleRejectCaller}
-                    />
-                  </Grid.Col>
-                ))}
-                
-                {liveCallers.length === 0 && (
-                  <Grid.Col span={12}>
-                    <Paper p="xl" withBorder>
-                      <Text ta="center" c="dimmed">
-                        No live participants. Add callers from the queue.
                       </Text>
-                    </Paper>
-                  </Grid.Col>
-                )}
-              </Grid>
-            </Card>
-          </Grid.Col>
+                    )}
+                  </Stack>
+                </ScrollArea>
+              </Card>
+            </Grid.Col>
 
-          {/* Caller Queue */}
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Card withBorder radius="md" h="100%">
-              <Group justify="space-between" mb="md">
-                <Title order={4}>Caller Queue</Title>
-                <Button 
-                  leftSection={<IconUserPlus size={16} />}
-                  size="xs"
-                  variant="light"
-                  onClick={open}
+            <Grid.Col span={{ base: 12, lg: 8 }}>
+              <Card withBorder h="100%">
+                <Text fw={500} mb="md">Live Callers ({liveCallers.length})</Text>
+                <SimpleGrid 
+                  cols={{ base: 1, sm: 2 }} 
+                  spacing="md"
                 >
-                  Add Caller
-                </Button>
-              </Group>
-              
-              <ScrollArea className={styles.queueList}>
-                <Stack gap="sm">
-                  {callers.length > 0 ? (
-                    callers.map((caller) => (
-                      <CallerCard
-                        key={caller.id}
-                        caller={caller}
-                        onAccept={handleAcceptCaller}
+                  {liveCallers.length > 0 ? (
+                    liveCallers.map((caller) => (
+                      <CallerCard 
+                        key={caller.id} 
+                        caller={caller} 
+                        isLive 
                         onReject={handleRejectCaller}
                       />
                     ))
                   ) : (
-                    <Paper p="md" withBorder>
-                      <Text ta="center" c="dimmed">No callers in queue. Add callers to get started.</Text>
-                    </Paper>
+                    <Text size="sm" c="dimmed">
+                      No live callers. Start a show and accept callers to see them here.
+                    </Text>
                   )}
-                </Stack>
-              </ScrollArea>
-            </Card>
-          </Grid.Col>
-        </Grid>
-      ) : (
-        <Paper p="xl" withBorder>
-          <Stack align="center">
-            <Title order={3}>Start a New Show</Title>
-            <Text c="dimmed" ta="center" mb="md">
-              Begin your broadcast and manage callers in real-time
-            </Text>
-            <Group>
-              <TextInput
-                placeholder="Show name"
-                value={showName}
-                onChange={(e) => setShowName(e.target.value)}
-              />
-              <Button 
-                leftSection={<IconBroadcast size={16} />}
-                onClick={handleStartShow}
-              >
-                Start Show
-              </Button>
-            </Group>
-          </Stack>
-        </Paper>
-      )}
+                </SimpleGrid>
+              </Card>
+            </Grid.Col>
+          </Grid>
+        </Tabs.Panel>
+      </Tabs>
 
       {/* Add Caller Modal */}
       <Modal 
         opened={opened} 
         onClose={close} 
-        title="Add Caller to Queue"
+        title="Add New Caller"
+        size="md"
       >
         <Stack>
           <TextInput
-            label="Name"
-            placeholder="Caller's name"
+            label="Caller Name"
+            placeholder="Enter caller's name"
             value={newCallerName}
-            onChange={(e) => setNewCallerName(e.target.value)}
+            onChange={(e) => setNewCallerName(e.currentTarget.value)}
             required
           />
           <TextInput
-            label="Email (optional)"
-            placeholder="Caller's email"
+            label="Email or Phone"
+            placeholder="Enter email or phone number"
             value={newCallerEmail}
-            onChange={(e) => setNewCallerEmail(e.target.value)}
+            onChange={(e) => setNewCallerEmail(e.currentTarget.value)}
           />
           <Group justify="flex-end" mt="md">
             <Button variant="default" onClick={close}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleAddCaller}
-              disabled={!newCallerName.trim()}
-            >
+            <Button onClick={handleAddCaller} disabled={!newCallerName.trim()}>
               Add Caller
             </Button>
           </Group>
