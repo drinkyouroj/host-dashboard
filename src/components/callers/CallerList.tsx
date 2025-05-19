@@ -27,17 +27,19 @@ import type { Caller } from '../../contexts/ShowContext';
 
 export type { Caller };
 
+// Import the UICaller type from the HostDashboard
+import type { UICaller } from '../../pages/HostDashboard';
+
 // Create a UI-specific status type that maps to our status values
-type UICallerStatus = 'waiting' | 'on-air' | 'completed' | 'rejected';
+type UICallerStatus = UICaller['status'];
 
 // Extend the Caller type with UI-specific properties
-interface UICaller extends Omit<Caller, 'status'> {
+type UICallerExtended = UICaller & {
   phoneNumber: string;
   waitTime: number;
   isMuted: boolean;
   isPriority: boolean;
-  status: UICallerStatus;
-}
+};
 
 interface CallerListProps {
   callers: Caller[];
@@ -61,12 +63,27 @@ export function CallerList({
     const originalCaller = callers.find(c => c.id === uiCaller.id);
     if (originalCaller) {
       setSelectedCallerId(uiCaller.id);
-      // Call the onSelectCaller with just the original caller data
+      // Call the onSelectCaller with the UI caller data
       onSelectCaller({
         ...originalCaller,
-        // Ensure we're not passing any UI-specific properties
+        phoneNumber: uiCaller.phoneNumber,
+        waitTime: uiCaller.waitTime,
+        isMuted: uiCaller.isMuted,
+        isPriority: uiCaller.isPriority,
+        status: uiCaller.status,
+        notes: uiCaller.notes
       });
     }
+  };
+  
+  const handleMuteToggle = (e: React.MouseEvent, caller: UICaller) => {
+    e.stopPropagation();
+    onMuteToggle(caller.id, !caller.isMuted);
+  };
+  
+  const handlePriorityToggle = (e: React.MouseEvent, caller: UICaller) => {
+    e.stopPropagation();
+    onMuteToggle(caller.id, caller.isMuted); // Just to update the UI for now
   };
 
   const formatWaitTime = (minutes: number): string => {
