@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved UI/UX for better usability
 - Enhanced error handling and user feedback
 
+## [0.1.2] - 2025-05-19
+
+### Fixed
+- Fixed status check in CallerDetails to use 'live' instead of 'on-air'
+- Improved button states for call controls based on caller status
+- Added visual feedback for call actions
+- Enhanced button styling and transitions
+
+### Added
+- Different button text for 'Put On Air' vs 'Reconnect' states
+- Better visual feedback for active call controls
+
 ## [0.1.1] - 2025-05-19
 
 ### Added
