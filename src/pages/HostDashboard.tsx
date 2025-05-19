@@ -136,11 +136,23 @@ const CallerCard = ({
   );
 };
 
+// Convert the existing callers to the new Caller type format
+const mapToCaller = (caller: any, status: Caller['status'] = 'waiting'): Caller => ({
+  id: caller.id,
+  name: caller.name,
+  phoneNumber: caller.email || 'Unknown',
+  status,
+  waitTime: 0, // You might want to calculate this based on join time
+  notes: caller.notes,
+  isMuted: false,
+  isPriority: false
+});
+
 export default function HostDashboard() {
   const { user, logout } = useAuth();
   const { 
-    callers, 
-    liveCallers, 
+    callers: oldCallers, 
+    liveCallers: oldLiveCallers, 
     addCaller, 
     moveToLive, 
     removeCaller,
@@ -150,11 +162,18 @@ export default function HostDashboard() {
     currentShow
   } = useShow();
   
+  const [activeTab, setActiveTab] = useState<string | null>('callers');
+  const [selectedCaller, setSelectedCaller] = useState<Caller | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
   const [showName, setShowName] = useState('My Awesome Show');
   const [newCallerName, setNewCallerName] = useState('');
   const [newCallerEmail, setNewCallerEmail] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Convert old callers to new format
+  const callers = oldCallers.map(caller => mapToCaller(caller, 'waiting'));
+  const liveCallers = oldLiveCallers.map(caller => mapToCaller(caller, 'on-air'));
+  const allCallers = [...liveCallers, ...callers];
 
   const handleStartShow = () => {
     if (!showName.trim()) {
@@ -213,10 +232,38 @@ export default function HostDashboard() {
   const handleRejectCaller = (callerId: string) => {
     removeCaller(callerId);
     showNotification({
-      title: 'Caller Rejected',
+      title: 'Caller Removed',
       message: 'Caller has been removed from the queue',
-      color: 'red',
+      color: 'orange',
     });
+  };
+
+  const handleMuteToggle = (callerId: string, isMuted: boolean) => {
+    // In a real app, this would update the caller's mute status via API
+    console.log(`Caller ${callerId} muted: ${isMuted}`);
+  };
+
+  const handlePromoteToLive = (callerId: string) => {
+    moveToLive(callerId);
+    showNotification({
+      title: 'Caller Promoted',
+      message: 'Caller has been moved to live',
+      color: 'green',
+    });
+  };
+
+  const handleEndCall = (callerId: string) => {
+    removeCaller(callerId);
+    showNotification({
+      title: 'Call Ended',
+      message: 'Call has been ended',
+      color: 'blue',
+    });
+  };
+
+  const handleAddNote = (callerId: string, note: string) => {
+    // In a real app, this would save the note to your backend
+    console.log(`Added note to caller ${callerId}: ${note}`);
   };
 
   // In a real app, we would set up WebRTC connections here
