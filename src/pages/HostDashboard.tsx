@@ -139,23 +139,16 @@ const CallerCard = ({
   );
 };
 
-// Convert the existing callers to the new Caller type format
-const mapToCaller = (caller: any, status: Caller['status'] = 'waiting'): Caller => ({
-  id: caller.id,
-  name: caller.name,
-  phoneNumber: caller.email || 'Unknown',
-  status,
-  waitTime: 0, // You might want to calculate this based on join time
-  notes: caller.notes,
-  isMuted: false,
-  isPriority: false
-});
+  // Helper function to calculate wait time in minutes
+  const calculateWaitTime = (joinedAt: Date): number => {
+    return Math.floor((new Date().getTime() - new Date(joinedAt).getTime()) / 60000);
+  };
 
 export default function HostDashboard() {
   const { user, logout } = useAuth();
   const { 
-    callers: oldCallers, 
-    liveCallers: oldLiveCallers, 
+    callers, 
+    liveCallers, 
     addCaller, 
     moveToLive, 
     removeCaller,
@@ -176,8 +169,8 @@ export default function HostDashboard() {
   const [newCallerEmail, setNewCallerEmail] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  // Use the callers directly from the context
-  const allCallers = [...oldLiveCallers, ...oldCallers];
+  // Combine callers from the context
+  const allCallers = [...liveCallers, ...callers];
 
   const handleStartShow = () => {
     if (!showName.trim()) {
