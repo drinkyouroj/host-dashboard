@@ -1,36 +1,35 @@
 import { useState } from 'react';
 import { Container, Title, Grid, Paper, Text, Button, Group } from '@mantine/core';
-import { CallerList, Caller } from '../components/callers/CallerList';
+import { CallerList } from '../components/callers/CallerList';
 import { CallerDetails } from '../components/callers/CallerDetails';
+import type { Caller } from '../contexts/ShowContext';
 
 // Mock data for testing
 const mockCallers: Caller[] = [
   {
     id: '1',
     name: 'John Doe',
-    phoneNumber: '+1 (555) 123-4567',
+    phone: '+1 (555) 123-4567',
     status: 'waiting',
-    waitTime: 5,
-    isPriority: true,
-    notes: 'Regular caller, interested in topic #3',
+    joinedAt: new Date(Date.now() - 5 * 60 * 1000),
+    notes: 'Regular caller, interested in topic #3'
   },
   {
     id: '2',
     name: 'Jane Smith',
-    phoneNumber: '+1 (555) 987-6543',
+    phone: '+1 (555) 987-6543',
     status: 'waiting',
-    waitTime: 2,
-    notes: 'First-time caller',
+    joinedAt: new Date(Date.now() - 2 * 60 * 1000),
+    notes: 'First-time caller'
   },
   {
     id: '3',
     name: 'Robert Johnson',
-    phoneNumber: '+1 (555) 456-7890',
-    status: 'on-air',
-    waitTime: 10,
-    isMuted: false,
-    notes: 'Expert on today\'s topic',
-  },
+    phone: '+1 (555) 456-7890',
+    status: 'live',
+    joinedAt: new Date(Date.now() - 10 * 60 * 1000),
+    notes: 'Expert on today\'s topic'
+  }
 ];
 
 export function CallersTestPage() {
@@ -42,30 +41,26 @@ export function CallersTestPage() {
   };
 
   const handleMuteToggle = (callerId: string, isMuted: boolean) => {
-    setCallers(callers.map(caller => 
-      caller.id === callerId ? { ...caller, isMuted } : caller
-    ));
-    
-    if (selectedCaller?.id === callerId) {
-      setSelectedCaller({ ...selectedCaller, isMuted });
-    }
+    // In a real app, this would call your API to update the mute status
+    console.log(`Caller ${callerId} muted: ${isMuted}`);
     
     // In a real app, this would call your API to update the mute status
     console.log(`Caller ${callerId} muted: ${isMuted}`);
   };
 
   const handlePromoteToLive = (callerId: string) => {
-    setCallers(callers.map(caller => 
-      caller.id === callerId 
-        ? { ...caller, status: 'on-air' as const }
-        : caller.status === 'on-air' 
-          ? { ...caller, status: 'waiting' as const }
-          : caller
-    ));
+    setCallers(callers.map(caller => {
+      if (caller.id === callerId) {
+        return { ...caller, status: 'live' as const };
+      } else if (caller.status === 'live') {
+        return { ...caller, status: 'waiting' as const };
+      }
+      return caller;
+    }));
     
     const promotedCaller = callers.find(c => c.id === callerId);
     if (promotedCaller) {
-      setSelectedCaller({ ...promotedCaller, status: 'on-air' });
+      setSelectedCaller({ ...promotedCaller, status: 'live' });
     }
     
     // In a real app, this would connect the caller to the live show
@@ -75,12 +70,12 @@ export function CallersTestPage() {
   const handleEndCall = (callerId: string) => {
     setCallers(callers.map(caller => 
       caller.id === callerId 
-        ? { ...caller, status: 'completed' as const }
+        ? { ...caller, status: 'rejected' as const }
         : caller
     ));
     
     if (selectedCaller?.id === callerId) {
-      setSelectedCaller({ ...selectedCaller, status: 'completed' });
+      setSelectedCaller({ ...selectedCaller, status: 'rejected' });
     }
     
     // In a real app, this would end the call
@@ -88,17 +83,8 @@ export function CallersTestPage() {
   };
 
   const handleAddNote = (callerId: string, note: string) => {
-    const updatedCallers = callers.map(caller => 
-      caller.id === callerId 
-        ? { ...caller, notes: note }
-        : caller
-    );
-    
-    setCallers(updatedCallers);
-    
-    if (selectedCaller?.id === callerId) {
-      setSelectedCaller({ ...selectedCaller, notes: note });
-    }
+    // In a real app, this would save the note to your backend
+    console.log(`Added note to caller ${callerId}: ${note}`);
     
     // In a real app, this would save the note to your backend
     console.log(`Added note to caller ${callerId}: ${note}`);
