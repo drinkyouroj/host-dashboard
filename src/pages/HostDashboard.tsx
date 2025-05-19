@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useShow } from '../contexts/ShowContext';
 import { CallerList } from '../components/callers/CallerList';
@@ -275,21 +275,31 @@ export default function HostDashboard() {
     console.log(`Added note to caller ${callerId}: ${note}`);
   };
 
-  const handleSelectCaller = useCallback((caller: Caller) => {
-    // Create a new UI caller object
-    const uiCaller: UICaller = {
+  // Helper function to convert Caller to UICaller
+  const toUICaller = useCallback((caller: Caller): UICaller => {
+    // Convert status to UI status
+    let uiStatus: 'waiting' | 'on-air' | 'completed' | 'rejected';
+    if (caller.status === 'live') {
+      uiStatus = 'on-air';
+    } else if (caller.status === 'waiting' || caller.status === 'rejected') {
+      uiStatus = caller.status;
+    } else {
+      uiStatus = 'completed';
+    }
+
+    return {
       ...caller,
       phoneNumber: caller.phone || 'Unknown',
       waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
-      // Map 'live' status to 'on-air' for UI display
-      status: caller.status === 'live' ? 'on-air' : 
-              caller.status === 'waiting' || caller.status === 'rejected' ? caller.status : 'completed',
+      status: uiStatus,
       isMuted: false,
       isPriority: false
     };
-    
-    setSelectedCaller(uiCaller);
   }, []);
+
+  const handleSelectCaller = useCallback((caller: Caller) => {
+    setSelectedCaller(toUICaller(caller));
+  }, [toUICaller]);
 
   // In a real app, we would set up WebRTC connections here
   useEffect(() => {
@@ -395,17 +405,7 @@ export default function HostDashboard() {
                   <Text fw={600} mb="md">Caller Details</Text>
                   {selectedCaller && (
                   <CallerDetails 
-                    caller={{
-                      ...selectedCaller,
-                      // Ensure all required UICaller properties are included
-                      phoneNumber: selectedCaller.phoneNumber || 'Unknown',
-                      waitTime: selectedCaller.waitTime || 0,
-                      isMuted: selectedCaller.isMuted || false,
-                      isPriority: selectedCaller.isPriority || false,
-                      status: selectedCaller.status === 'live' ? 'on-air' : 
-                             selectedCaller.status === 'waiting' || selectedCaller.status === 'rejected' ? 
-                             selectedCaller.status : 'completed'
-                    }}
+                    caller={toUICaller(selectedCaller)}
                     onMuteToggle={handleMuteToggle}
                     onPromoteToLive={handlePromoteToLive}
                     onEndCall={handleEndCall}
