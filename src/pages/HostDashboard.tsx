@@ -20,7 +20,12 @@ import {
   Paper,
   Box,
   useMantineTheme,
-  createStyles,
+  rem,
+  SimpleGrid,
+  MantineTheme,
+  useMantineColorScheme,
+  useComputedColorScheme,
+  CSSObject
 } from '@mantine/core';
 import { 
   IconPhoneCall, 
@@ -39,35 +44,41 @@ import { showNotification } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const useStyles = createStyles((theme) => ({
-  callerCard: {
-    transition: 'transform 150ms ease, box-shadow 150ms ease',
-    '&:hover': {
-      transform: 'scale(1.01)',
-      boxShadow: theme.shadows.md,
-    },
-  },
-  liveBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 10,
-  },
-  videoContainer: {
-    position: 'relative',
-    paddingBottom: '56.25%', // 16:9 aspect ratio
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[2],
-    borderRadius: theme.radius.md,
-    overflow: 'hidden',
-  },
-  video: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
+const useStyles = () => {
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme();
+  
+  // Define styles as CSS-in-JS objects
+  const styles = {
+    callerCard: {
+      transition: 'transform 150ms ease, box-shadow 150ms ease',
+      '&:hover': {
+        transform: 'scale(1.01)',
+        boxShadow: theme.shadows.md,
+      },
+    } as CSSObject,
+    liveBadge: {
+      position: 'absolute' as const,
+      top: 10,
+      right: 10,
+      zIndex: 10,
+    } as CSSObject,
+    videoContainer: {
+      position: 'relative' as const,
+      paddingBottom: '56.25%', /* 16:9 */
+      backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[2],
+      borderRadius: theme.radius.md,
+      overflow: 'hidden' as const,
+    } as CSSObject,
+    video: {
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover' as const,
+    } as CSSObject,
   controls: {
     position: 'absolute',
     bottom: 0,
@@ -100,13 +111,13 @@ const CallerCard = ({
   
   return (
     <Card withBorder p="md" radius="md" className={classes.callerCard}>
-      <Group position="apart" noWrap>
-        <Group spacing="sm" noWrap>
+      <Group justify="space-between" wrap="nowrap">
+        <Group gap="sm" wrap="nowrap">
           <Avatar size={40} color="blue" radius="xl">
             {caller.name.charAt(0).toUpperCase()}
           </Avatar>
           <div>
-            <Text size="sm" weight={500}>
+            <Text size="sm" fw={500}>
               {caller.name}
             </Text>
             <Text size="xs" color="dimmed">
@@ -119,7 +130,7 @@ const CallerCard = ({
             LIVE
           </Badge>
         ) : (
-          <Group spacing="xs">
+          <Group gap="xs">
             <ActionIcon 
               color="green" 
               variant="light"
@@ -267,7 +278,7 @@ export default function HostDashboard() {
 
   return (
     <Container size="xl" py="md">
-      <Group position="apart" mb="xl">
+      <Group justify="space-between" mb="xl">
         <div>
           <Title order={2}>
             {isShowLive ? currentShow : 'Host Dashboard'}
@@ -279,7 +290,7 @@ export default function HostDashboard() {
         <Group>
           {isShowLive ? (
             <Button 
-              leftIcon={<IconBroadcast size={16} />} 
+              leftSection={<IconBroadcast size={16} />}
               color="red"
               onClick={handleEndShow}
               variant="light"
@@ -288,7 +299,7 @@ export default function HostDashboard() {
             </Button>
           ) : (
             <Button 
-              leftIcon={<IconBroadcast size={16} />} 
+              leftSection={<IconBroadcast size={16} />}
               onClick={handleStartShow}
             >
               Start Show
@@ -307,7 +318,7 @@ export default function HostDashboard() {
       {isShowLive ? (
         <Grid>
           {/* Main Stage */}
-          <Grid.Col md={8}>
+          <Grid.Col span={{ base: 12, md: 8 }}>
             <Card withBorder radius="md" h="100%">
               <div className={classes.videoContainer}>
                 <video 
@@ -337,7 +348,7 @@ export default function HostDashboard() {
               <Title order={4} mt="md">Live Participants</Title>
               <Grid mt="md">
                 {liveCallers.map((caller) => (
-                  <Grid.Col key={caller.id} span={12} md={6}>
+                  <Grid.Col key={caller.id} span={12} md={6} lg={6}>
                     <CallerCard 
                       caller={caller} 
                       isLive 
@@ -360,12 +371,12 @@ export default function HostDashboard() {
           </Grid.Col>
 
           {/* Caller Queue */}
-          <Grid.Col md={4}>
+          <Grid.Col span={{ base: 12, md: 4 }}>
             <Card withBorder radius="md" h="100%">
-              <Group position="apart" mb="md">
+              <Group justify="space-between" mb="md">
                 <Title order={4}>Caller Queue</Title>
                 <Button 
-                  leftIcon={<IconUserPlus size={16} />} 
+                  leftSection={<IconUserPlus size={16} />}
                   size="xs"
                   variant="light"
                   onClick={open}
@@ -375,7 +386,7 @@ export default function HostDashboard() {
               </Group>
               
               <ScrollArea className={classes.queueList}>
-                <Stack spacing="sm">
+                <Stack gap="sm">
                   {callers.length > 0 ? (
                     callers.map((caller) => (
                       <CallerCard
@@ -401,7 +412,7 @@ export default function HostDashboard() {
         <Paper p="xl" withBorder>
           <Stack align="center">
             <Title order={3}>Start a New Show</Title>
-            <Text color="dimmed" align="center" mb="md">
+            <Text c="dimmed" ta="center" mb="md">
               Begin your broadcast and manage callers in real-time
             </Text>
             <Group>
@@ -411,7 +422,7 @@ export default function HostDashboard() {
                 onChange={(e) => setShowName(e.target.value)}
               />
               <Button 
-                leftIcon={<IconBroadcast size={16} />} 
+                leftSection={<IconBroadcast size={16} />}
                 onClick={handleStartShow}
               >
                 Start Show
@@ -441,7 +452,7 @@ export default function HostDashboard() {
             value={newCallerEmail}
             onChange={(e) => setNewCallerEmail(e.target.value)}
           />
-          <Group position="right" mt="md">
+          <Group justify="flex-end" mt="md">
             <Button variant="default" onClick={close}>
               Cancel
             </Button>
