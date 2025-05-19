@@ -156,11 +156,13 @@ export default function HostDashboard() {
     liveCallers, 
     addCaller, 
     moveToLive, 
-    removeCaller,
+    moveToWaiting,
+    removeCaller, 
+    updateCallerStatus,
+    currentShow,
     startShow,
     endShow,
-    isShowLive,
-    currentShow
+    isShowLive 
   } = useShow();
   
   // UI State
@@ -316,6 +318,15 @@ export default function HostDashboard() {
       color: 'green',
     });
   }, [moveToLive]);
+
+  const handleTakeOffAir = useCallback((callerId: string) => {
+    moveToWaiting(callerId);
+    showNotification({
+      title: 'Caller Taken Off Air',
+      message: 'The caller has been moved back to the waiting queue',
+      color: 'yellow',
+    });
+  }, [moveToWaiting]);
 
   const handleEndCall = useCallback((callerId: string) => {
     // Remove the caller from the list
@@ -544,6 +555,7 @@ export default function HostDashboard() {
                     onMuteToggle={handleMuteToggle}
                     onPriorityToggle={handlePriorityToggle}
                     onPromoteToLive={handlePromoteToLive}
+                    onTakeOffAir={handleTakeOffAir}
                     onEndCall={handleEndCall}
                     onAddNote={handleAddNote}
                   />

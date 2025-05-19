@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Text, Paper, Group, Avatar, Badge, Stack, Textarea, Button, Divider } from '@mantine/core';
-import { IconPhone, IconPhoneOff, IconVolume, IconVolumeOff, IconStar, IconUserPlus, IconNote } from '@tabler/icons-react';
+import { IconPhone, IconPhoneOff, IconVolume, IconVolumeOff, IconStar, IconUserPlus, IconNote, IconArrowBack } from '@tabler/icons-react';
 import type { Caller } from '../../contexts/ShowContext';
 
 // Types for UI representation
@@ -21,6 +21,7 @@ interface CallerDetailsProps {
   onMuteToggle: (callerId: string, isMuted: boolean) => void;
   onPriorityToggle: (callerId: string, isPriority: boolean) => void;
   onPromoteToLive: (callerId: string) => void;
+  onTakeOffAir?: (callerId: string) => void;
   onEndCall: (callerId: string) => void;
   onAddNote: (callerId: string, note: string) => void;
 }
@@ -30,6 +31,7 @@ export function CallerDetails({
   onMuteToggle,
   onPriorityToggle,
   onPromoteToLive,
+  onTakeOffAir = () => {}, // Default to no-op if not provided
   onEndCall,
   onAddNote,
 }: CallerDetailsProps) {
@@ -172,8 +174,19 @@ export function CallerDetails({
               variant={isMuted ? 'filled' : 'outline'}
               onClick={() => onMuteToggle(caller.id, !isMuted)}
               style={{ transition: 'all 0.2s' }}
+              fullWidth
             >
               {isMuted ? 'Unmute' : 'Mute'}
+            </Button>
+            <Button
+              leftSection={<IconArrowBack size={16} />}
+              color="yellow"
+              variant="outline"
+              onClick={() => onTakeOffAir(caller.id)}
+              style={{ transition: 'all 0.2s' }}
+              fullWidth
+            >
+              Take Off Air
             </Button>
             <Button
               leftSection={<IconPhoneOff size={16} />}
@@ -181,8 +194,9 @@ export function CallerDetails({
               variant="filled"
               onClick={() => onEndCall(caller.id)}
               style={{ transition: 'all 0.2s' }}
+              fullWidth
             >
-              End Call
+              Disconnect
             </Button>
           </>
         ) : (

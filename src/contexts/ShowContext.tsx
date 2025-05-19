@@ -16,6 +16,7 @@ interface ShowContextType {
   liveCallers: Caller[];
   addCaller: (caller: Omit<Caller, 'id' | 'joinedAt' | 'status'>) => Caller;
   moveToLive: (callerId: string) => void;
+  moveToWaiting: (callerId: string) => void;
   removeCaller: (callerId: string) => void;
   updateCallerStatus: (callerId: string, status: Caller['status']) => void;
   currentShow: string | null;
@@ -59,6 +60,22 @@ export function ShowProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const moveToWaiting = useCallback((callerId: string) => {
+    setLiveCallers(prevLiveCallers => {
+      const caller = prevLiveCallers.find(c => c.id === callerId);
+      if (!caller) return prevLiveCallers;
+
+      // Move back to waiting list
+      setCallers(prevCallers => {
+        if (prevCallers.some(c => c.id === callerId)) return prevCallers;
+        return [...prevCallers, { ...caller, status: 'waiting' }];
+      });
+
+      // Remove from live list
+      return prevLiveCallers.filter(c => c.id !== callerId);
+    });
+  }, []);
+
   const removeCaller = useCallback((callerId: string) => {
     setCallers(prev => prev.filter(caller => caller.id !== callerId));
     setLiveCallers(prev => prev.filter(caller => caller.id !== callerId));
@@ -94,6 +111,7 @@ export function ShowProvider({ children }: { children: ReactNode }) {
         liveCallers: liveCallers.filter(c => c.status === 'live'),
         addCaller,
         moveToLive,
+        moveToWaiting,
         removeCaller,
         updateCallerStatus,
         currentShow,

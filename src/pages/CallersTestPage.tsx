@@ -115,16 +115,19 @@ export function CallersTestPage() {
     console.log(`Promoted caller ${callerId} to live`);
   }, [selectedCaller]);
 
+  const handleTakeOffAir = useCallback((callerId: string) => {
+    setCallers(prev => 
+      prev.map(c => 
+        c.id === callerId ? { ...c, status: 'waiting' } : c
+      )
+    );
+    setSelectedCaller(null);
+  }, []);
+
   const handleEndCall = useCallback((callerId: string) => {
-    setCallers(prev => prev.filter(caller => caller.id !== callerId));
-    
-    if (selectedCaller?.id === callerId) {
-      setSelectedCaller(null);
-    }
-    
-    // In a real app, this would end the call
-    console.log(`Ended call with ${callerId}`);
-  }, [selectedCaller]);
+    setCallers(prev => prev.filter(c => c.id !== callerId));
+    setSelectedCaller(null);
+  }, []);
 
   const handlePriorityToggle = useCallback((callerId: string, isPriority: boolean) => {
     setCallers(prev => 
@@ -190,6 +193,7 @@ export function CallersTestPage() {
               onMuteToggle={handleMuteToggle}
               onPriorityToggle={handlePriorityToggle}
               onPromoteToLive={handlePromoteToLive}
+              onTakeOffAir={handleTakeOffAir}
               onEndCall={handleEndCall}
               onAddNote={handleAddNote}
             />
