@@ -36,8 +36,10 @@ export function StreamProvider({ children }: { children: ReactNode }) {
     const initClient = async () => {
       try {
         // Create client with show ID as the room alias
+        // Using a fixed string for now since currentShow is just a string
+        const showId = typeof currentShow === 'string' ? currentShow : `show-${Date.now()}`;
         clientRef.current = Client.create({
-          alias: `show-${currentShow.id}`,
+          alias: showId,
           origin: process.env.REACT_APP_DATAGRAM_ORIGIN || window.location.origin,
         });
 
@@ -47,7 +49,7 @@ export function StreamProvider({ children }: { children: ReactNode }) {
           turnOnMic: true,
           turnOnCam: true,
           metadata: {
-            title: currentShow.name,
+            title: typeof currentShow === 'string' ? currentShow : 'Live Show',
           },
         };
 
@@ -189,12 +191,18 @@ export function StreamProvider({ children }: { children: ReactNode }) {
       console.log('Guest join URL:', guestUrl);
       
       // Add to your show's caller list
-      addCaller({
+      // Create a caller object that matches the expected type
+      const newCaller = {
         id: guestId,
         name: `Guest ${guestId.slice(0, 6)}`,
-        status: 'waiting',
+        email: `${guestId}@guest.example.com`,
+        phone: '',
         joinedAt: new Date(),
-      });
+        status: 'waiting' as const,
+      };
+      
+      // Add the caller to the show context
+      addCaller(newCaller);
       
     } catch (error) {
       console.error('Failed to add guest:', error);
