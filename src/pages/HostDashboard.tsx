@@ -167,7 +167,7 @@ export default function HostDashboard() {
   
   // UI State
   const [selectedCaller, setSelectedCaller] = useState<UICaller | null>(null);
-  const [activeTab, setActiveTab] = useState<string | null>('callers');
+  const [activeTab, setActiveTab] = useState<string | null>('stream');
   const [opened, { open, close }] = useDisclosure(false);
   
   // Caller State
@@ -455,11 +455,6 @@ export default function HostDashboard() {
     // For demo purposes, we'll just log the current state
     console.log('Live callers:', liveCallers);
     
-    return () => {
-      // Clean up any resources
-    };
-  }, [liveCallers]);
-
   return (
     <Container size="xl" py="md" className={styles.dashboardContainer}>
       <header className={styles.header}>
@@ -467,31 +462,14 @@ export default function HostDashboard() {
           <Title order={2} className={styles.title}>
             {isShowLive ? (
               <Group gap="xs">
-                <Box className={styles.liveIndicator} />
-                <Text>LIVE: {currentShow || 'Untitled Show'}</Text>
+                <Badge color="red" variant="filled">LIVE</Badge>
+                <span>Show in Progress</span>
               </Group>
             ) : (
               'Host Dashboard'
             )}
           </Title>
-          <Group>
-            {isShowLive ? (
-              <Button 
-                leftSection={<IconBroadcast size={18} />} 
-                color="red"
-                onClick={handleEndShow}
-                variant="outline"
-              >
-                End Show
-              </Button>
-            ) : (
-              <Button 
-                leftSection={<IconBroadcast size={18} />} 
-                onClick={handleStartShow}
-              >
-                Start Show
-              </Button>
-            )}
+          {isShowLive ? (
             <Button 
               leftSection={<IconUserPlus size={18} />} 
               variant="outline"
@@ -550,33 +528,38 @@ export default function HostDashboard() {
                 <Paper p="md" withBorder h="100%">
                   <Text fw={600} mb="md">Caller Details</Text>
                   {selectedCaller && (
-                  <CallerDetails 
-                    caller={toUICaller(selectedCaller)}
-                    onMuteToggle={handleMuteToggle}
-                    onPriorityToggle={handlePriorityToggle}
-                    onPromoteToLive={handlePromoteToLive}
-                    onTakeOffAir={handleTakeOffAir}
-                    onEndCall={handleEndCall}
-                    onAddNote={handleAddNote}
-                  />
-                )}
-                </Paper>
+                <Card withBorder h="100%">
+                  <Text fw={500} mb="md">Live Callers ({liveCallers.length})</Text>
+                  <ScrollArea h={300}>
+                    <Stack gap="xs">
+                      {liveCallers.length > 0 ? (
+                        liveCallers.map((caller) => (
+                          <CallerCard 
+                            key={caller.id}
+                            caller={caller}
+                            isLive
+                            onReject={handleRejectCaller}
+                          />
+                        ))
+                      ) : (
+                        <Text size="sm" c="dimmed" ta="center" py="md">
+                          No live callers
+                        </Text>
+                      )}
+                    </Stack>
+                  </ScrollArea>
+                </Card>
               </Grid.Col>
-            </Grid>
-          </Tabs.Panel>
-
-          <Tabs.Panel value="legacy" pt="md">
-            <Grid gutter="md">
-              <Grid.Col span={{ base: 12, lg: 4 }}>
+              <Grid.Col span={{ base: 12, md: 4 }}>
                 <Card withBorder h="100%">
                   <Text fw={500} mb="md">Call Queue ({callers.length})</Text>
                   <ScrollArea h={300}>
                     <Stack gap="xs">
                       {callers.length > 0 ? (
                         callers.map((caller) => (
-                          <CallerCard 
-                            key={caller.id} 
-                            caller={caller} 
+                          <CallerCard
+                            key={caller.id}
+                            caller={caller}
                             onAccept={handleAcceptCaller}
                             onReject={handleRejectCaller}
                           />
@@ -590,63 +573,39 @@ export default function HostDashboard() {
                   </ScrollArea>
                 </Card>
               </Grid.Col>
-
-              <Grid.Col span={{ base: 12, lg: 8 }}>
-                <Card withBorder h="100%">
-                  <Text fw={500} mb="md">Live Callers ({liveCallers.length})</Text>
-                  <SimpleGrid 
-                    cols={{ base: 1, sm: 2 }} 
-                    spacing="md"
-                  >
-                    {liveCallers.length > 0 ? (
-                      liveCallers.map((caller) => (
-                        <CallerCard 
-                          key={caller.id} 
-                          caller={caller} 
-                          isLive 
-                          onReject={handleRejectCaller}
-                        />
-                      ))
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        No live callers. Start a show and accept callers to see them here.
-                      </Text>
-                    )}
-                  </SimpleGrid>
-                </Card>
-              </Grid.Col>
             </Grid>
-          </Tabs.Panel>
+          </TabsPanel>
+
+          <TabsPanel value="stream" pt="md">
+            <StreamView isHost={true} />
+          </TabsPanel>
         </Tabs>
       ) : (
-        <Paper p="xl" withBorder mt="md">
-          <Stack align="center">
-            <Title order={3}>Start a New Show</Title>
-            <Text c="dimmed" ta="center" mb="md">
-              Begin your broadcast and manage callers in real-time
+        <Paper p="xl" withBorder>
+          <Stack align="center" spacing="md">
+            <IconBroadcast size={48} stroke={1.5} />
+            <Title order={3}>No Active Show</Title>
+            <Text c="dimmed" ta="center">
+              Start a new show to begin managing callers and broadcasting live.
             </Text>
-            <Group>
-              <TextInput
-                placeholder="Show name"
-                value={showName}
-                onChange={(e) => setShowName(e.target.value)}
-              />
-              <Button 
-                leftSection={<IconBroadcast size={16} />}
-                onClick={handleStartShow}
-              >
-                Start Show
-              </Button>
-            </Group>
+            <Button 
+              leftSection={<IconBroadcast size={16} />} 
+              onClick={handleStartShow}
+              loading={isStartingShow}
+              mt="md"
+            >
+              Start Show
+            </Button>
           </Stack>
         </Paper>
       )}
-
+      </Container>
+      
       {/* Add Caller Modal */}
       <Modal 
         opened={opened} 
-        onClose={close} 
-        title="Add New Caller"
+        onClose={close}
+        title="Add Caller"
         size="md"
       >
         <Stack>
