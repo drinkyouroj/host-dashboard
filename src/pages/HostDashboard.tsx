@@ -48,8 +48,9 @@ import {
   IconUsers
 } from '@tabler/icons-react';
 
-// Import our new components
-import { CallerList, Caller } from '../components/callers/CallerList';
+// Import our components
+import { CallerList } from '../components/callers/CallerList';
+import type { Caller } from '../contexts/ShowContext';
 import { CallerDetails } from '../components/callers/CallerDetails';
 import { showNotification } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
@@ -175,10 +176,8 @@ export default function HostDashboard() {
   const [newCallerEmail, setNewCallerEmail] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  // Convert old callers to new format
-  const callers = oldCallers.map(caller => mapToCaller(caller, 'waiting'));
-  const liveCallers = oldLiveCallers.map(caller => mapToCaller(caller, 'on-air'));
-  const allCallers = [...liveCallers, ...callers];
+  // Use the callers directly from the context
+  const allCallers = [...oldLiveCallers, ...oldCallers];
 
   const handleStartShow = () => {
     if (!showName.trim()) {
@@ -269,6 +268,10 @@ export default function HostDashboard() {
   const handleAddNote = (callerId: string, note: string) => {
     // In a real app, this would save the note to your backend
     console.log(`Added note to caller ${callerId}: ${note}`);
+  };
+
+  const handleSelectCaller = (caller: Caller) => {
+    setSelectedCaller(caller);
   };
 
   // In a real app, we would set up WebRTC connections here
