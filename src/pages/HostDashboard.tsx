@@ -254,7 +254,7 @@ export default function HostDashboard() {
           )}
           <Button
             variant="default"
-            leftIcon={<IconSettings size={16} />}
+            leftSection={<IconSettings size={16} />}
             onClick={() => {}}
           >
             Settings
@@ -307,7 +307,7 @@ export default function HostDashboard() {
                 {liveCallers.length === 0 && (
                   <Grid.Col span={12}>
                     <Paper p="xl" withBorder>
-                      <Text align="center" color="dimmed">
+                      <Text ta="center" c="dimmed">
                         No live participants. Add callers from the queue.
                       </Text>
                     </Paper>
