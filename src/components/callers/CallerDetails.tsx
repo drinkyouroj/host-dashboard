@@ -1,10 +1,20 @@
 import { useState } from 'react';
 import { Box, Text, Paper, Group, Avatar, Badge, Stack, Textarea, Button, Divider } from '@mantine/core';
 import { IconPhone, IconPhoneOff, IconVolume, IconVolumeOff, IconStar, IconUserPlus, IconNote } from '@tabler/icons-react';
-import { Caller } from './CallerList';
+import type { Caller } from '../../contexts/ShowContext';
+
+// Extend the Caller type for UI purposes
+interface UICaller extends Omit<Caller, 'status'> {
+  phoneNumber: string;
+  waitTime: number;
+  isMuted: boolean;
+  isPriority: boolean;
+  status: 'waiting' | 'on-air' | 'completed' | 'rejected';
+  notes?: string;
+}
 
 interface CallerDetailsProps {
-  caller: Caller | null;
+  caller: UICaller | null;
   onMuteToggle: (callerId: string, isMuted: boolean) => void;
   onPromoteToLive: (callerId: string) => void;
   onEndCall: (callerId: string) => void;
