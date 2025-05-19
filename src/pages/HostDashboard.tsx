@@ -91,6 +91,22 @@ const HostDashboard = () => {
     }
   };
 
+  const returnToQueue = (callerId: string) => {
+    const caller = liveCallers.find(c => c.id === callerId);
+    if (caller) {
+      // Move caller back to waiting queue
+      setCallers(prev => [...prev, { ...caller, status: 'waiting' }]);
+      // Remove from live callers
+      setLiveCallers(prev => prev.filter(c => c.id !== callerId));
+      
+      showNotification({
+        title: 'Caller Returned',
+        message: `${caller.name} has been returned to the waiting queue`,
+        color: 'blue',
+      });
+    }
+  };
+
   // Event handlers
   const handleAddCaller = () => {
     if (!newCallerName.trim()) return;
@@ -255,6 +271,7 @@ const HostDashboard = () => {
                             key={caller.id}
                             caller={caller}
                             isLive
+                            onReturnToQueue={() => returnToQueue(caller.id)}
                           />
                         ))}
                       </Stack>

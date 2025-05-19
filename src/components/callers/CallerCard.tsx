@@ -11,6 +11,7 @@ interface CallerCardProps {
   };
   onAccept?: (id: string) => void;
   onReject?: (id: string) => void;
+  onReturnToQueue?: (id: string) => void;
   isLive?: boolean;
 }
 
@@ -18,6 +19,7 @@ export function CallerCard({
   caller, 
   onAccept, 
   onReject, 
+  onReturnToQueue,
   isLive = false 
 }: CallerCardProps) {
   const waitTime = Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000);
@@ -48,28 +50,39 @@ export function CallerCard({
             </Text>
           </div>
         </Group>
-        
-        {!isLive && onAccept && onReject && (
-          <Group gap="xs">
+        <Group gap="xs">
+          {isLive && onReturnToQueue ? (
             <Button 
               variant="outline" 
               size="xs" 
+              color="yellow"
               leftSection={<IconPhoneCall size={14} />}
-              onClick={() => onAccept(caller.id)}
+              onClick={() => onReturnToQueue(caller.id)}
             >
-              Accept
+              Return to Queue
             </Button>
-            <Button 
-              variant="subtle" 
-              size="xs" 
-              color="red"
-              leftSection={<IconX size={14} />}
-              onClick={() => onReject(caller.id)}
-            >
-              Reject
-            </Button>
-          </Group>
-        )}
+          ) : onAccept && onReject && (
+            <>
+              <Button 
+                variant="outline" 
+                size="xs" 
+                leftSection={<IconPhoneCall size={14} />}
+                onClick={() => onAccept(caller.id)}
+              >
+                Accept
+              </Button>
+              <Button 
+                variant="subtle" 
+                size="xs" 
+                color="red"
+                leftSection={<IconX size={14} />}
+                onClick={() => onReject(caller.id)}
+              >
+                Reject
+              </Button>
+            </>
+          )}
+        </Group>
       </Group>
     </Card>
   );
