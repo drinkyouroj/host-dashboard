@@ -393,13 +393,25 @@ export default function HostDashboard() {
               <Grid.Col span={{ base: 12, md: 7 }}>
                 <Paper p="md" withBorder h="100%">
                   <Text fw={600} mb="md">Caller Details</Text>
-                  <CallerDetails
-                    caller={selectedCaller}
+                  {selectedCaller && (
+                  <CallerDetails 
+                    caller={{
+                      ...selectedCaller,
+                      // Ensure all required UICaller properties are included
+                      phoneNumber: selectedCaller.phoneNumber || 'Unknown',
+                      waitTime: selectedCaller.waitTime || 0,
+                      isMuted: selectedCaller.isMuted || false,
+                      isPriority: selectedCaller.isPriority || false,
+                      status: selectedCaller.status === 'live' ? 'on-air' : 
+                             selectedCaller.status === 'waiting' || selectedCaller.status === 'rejected' ? 
+                             selectedCaller.status : 'completed'
+                    }}
                     onMuteToggle={handleMuteToggle}
                     onPromoteToLive={handlePromoteToLive}
                     onEndCall={handleEndCall}
                     onAddNote={handleAddNote}
                   />
+                )}
                 </Paper>
               </Grid.Col>
             </Grid>
