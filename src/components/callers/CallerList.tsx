@@ -44,9 +44,13 @@ export function CallerList({
 }: CallerListProps) {
   const [selectedCallerId, setSelectedCallerId] = useState<string | null>(null);
 
-  const handleCallerClick = (caller: Caller) => {
-    setSelectedCallerId(caller.id);
-    onSelectCaller(caller);
+  const handleCallerClick = (uiCaller: UICaller) => {
+    // Find the original caller from the callers array
+    const originalCaller = callers.find(c => c.id === uiCaller.id);
+    if (originalCaller) {
+      setSelectedCallerId(uiCaller.id);
+      onSelectCaller(originalCaller);
+    }
   };
 
   const formatWaitTime = (minutes: number): string => {
@@ -56,23 +60,43 @@ export function CallerList({
 
   // Map the Caller to UICaller for display
   const mapToUICaller = (caller: Caller): UICaller => {
-    const statusMap: Record<Caller['status'], UICallerStatus> = {
-      'waiting': 'waiting',
-      'live': 'on-air',
-      'rejected': 'rejected'
-    };
+    // Map the status to our UI status
+    let uiStatus: UICallerStatus;
+    switch (caller.status) {
+      case 'live':
+        uiStatus = 'on-air';
+        break;
+      case 'waiting':
+      case 'rejected':
+        uiStatus = caller.status;
+        break;
+      default:
+        uiStatus = 'completed';
+    }
 
-    return {
+    // Create a new object with only the properties that match the UICaller interface
+    const uiCaller: UICaller = {
       ...caller,
       phoneNumber: caller.phone || 'Unknown',
       waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
-      status: statusMap[caller.status] || 'completed',
+      status: uiStatus,
       isMuted: false,
       isPriority: false
     };
+    
+    return uiCaller;
   };
 
-  const uiCallers = callers.map(mapToUICaller);
+  // Map the callers to UI callers and sort by status (on-air first, then waiting, then others)
+  const uiCallers = callers.map(mapToUICaller).sort((a, b) => {
+    const statusOrder: Record<UICallerStatus, number> = {
+      'on-air': 0,
+      'waiting': 1,
+      'rejected': 2,
+      'completed': 3
+    };
+    return statusOrder[a.status] - statusOrder[b.status];
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
