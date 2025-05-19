@@ -30,14 +30,16 @@ export function CallerCard({
             {caller.name.charAt(0).toUpperCase()}
           </Avatar>
           <div>
-            <Text fw={500} size="sm">
-              {caller.name}
+            <Group gap="xs" align="center" wrap="nowrap">
+              <Text fw={500} size="sm">
+                {caller.name}
+              </Text>
               {isLive && (
-                <Badge color="red" ml="sm" size="xs">
+                <Badge color="red" size="xs">
                   LIVE
                 </Badge>
               )}
-            </Text>
+            </Group>
             <Text size="xs" color="dimmed">
               {caller.email}
             </Text>
