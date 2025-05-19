@@ -354,24 +354,27 @@ export default function HostDashboard() {
     });
   }, [callerState.notes, selectedCaller, updateCallerState]);
 
-  // Helper function to convert Caller to UICaller
+  // Helper function to convert Caller to UICaller for display
   const toUICaller = useCallback((caller: Caller | UICaller): UICaller => {
-    // If it's already a UICaller, return it with updated local state
-    if ('isMuted' in caller && 'isPriority' in caller) {
+    // If it's already a UICaller, return it with updated waitTime
+    if ('phoneNumber' in caller) {
       return {
         ...caller,
-        isMuted: callerState.isMuted[caller.id] ?? caller.isMuted,
-        isPriority: callerState.isPriority[caller.id] ?? caller.isPriority,
-        notes: callerState.notes[caller.id] ?? caller.notes,
-        phoneNumber: caller.phoneNumber || caller.phone || 'Unknown',
         waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
-        // Ensure displayStatus is set
-    // Map status to display text
-    const statusMap: Record<string, string> = {
+        displayStatus: caller.displayStatus || 
+          (caller.status === 'live' ? 'On Air' : 
+           caller.status === 'waiting' ? 'Waiting' :
+           caller.status === 'rejected' ? 'Rejected' :
+           caller.status)
+      };
+    }
+
+    // Convert from Caller to UICaller
+    const statusMap = {
       'live': 'On Air',
       'waiting': 'Waiting',
       'rejected': 'Rejected'
-    };
+    } as const;
 
     // Ensure the status is one of the expected values
     const status: 'live' | 'waiting' | 'rejected' = 
@@ -397,7 +400,7 @@ export default function HostDashboard() {
       notes: ''
     };
   }, []);
-
+  
   // Convert all callers to UICaller objects
   const allUICallers = useMemo(() => {
     return allCallers.map(caller => toUICaller(caller));
