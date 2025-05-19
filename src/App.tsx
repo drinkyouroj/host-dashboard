@@ -16,6 +16,7 @@ import { StreamProvider } from './contexts/StreamContext';
 // Import components
 import HostDashboard from './pages/HostDashboard';
 import Login from './pages/Login';
+import { CallersTestPage } from './pages/CallersTestPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
@@ -51,6 +52,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <HostDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/test/callers"
+              element={
+                <ProtectedRoute>
+                  <CallersTestPage />
                 </ProtectedRoute>
               }
             />
