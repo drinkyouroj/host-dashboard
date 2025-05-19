@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { showNotification } from '@mantine/notifications';
 
 type Participant = {
@@ -51,8 +51,6 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
           { id: 'local', name: 'Host', stream, isHost: true }
         ]);
       }
-      
-      return stream;
     } catch (error) {
       console.error('Error accessing media devices:', error);
       showNotification({
@@ -60,29 +58,24 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
         message: 'Could not access camera or microphone',
         color: 'red',
       });
-      return null;
     }
   }, [isHost]);
 
   // Start streaming
   const startStream = useCallback(async () => {
-    if (isStreaming) return;
-    
-    const stream = localStream || await initializeLocalStream();
-    if (!stream) return;
-    
+    if (!localStream) {
+      await initializeLocalStream();
+    }
     setIsStreaming(true);
-    // In a real app, you would connect to your WebRTC server here
-    // and set up peer connections with other participants
-  }, [isStreaming, localStream, initializeLocalStream]);
+  }, [localStream, initializeLocalStream]);
 
   // Stop streaming
   const stopStream = useCallback(() => {
     if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+      localStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
     }
     if (screenShareStream.current) {
-      screenShareStream.current.getTracks().forEach(track => track.stop());
+      screenShareStream.current.getTracks().forEach((track: MediaStreamTrack) => track.stop());
       screenShareStream.current = null;
     }
     setLocalStream(null);
@@ -92,6 +85,19 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
     setAudioEnabled(false);
     setIsScreenSharing(false);
   }, [localStream]);
+
+  // Add a participant
+  const addParticipant = useCallback((id: string, name: string, stream: MediaStream, isHost = false) => {
+    setParticipants(prev => [
+      ...prev.filter(p => p.id !== id),
+      { id, name, stream, isHost }
+    ]);
+  }, []);
+
+  // Remove a participant
+  const removeParticipant = useCallback((id: string) => {
+    setParticipants(prev => prev.filter(p => p.id !== id));
+  }, []);
 
   // Toggle video
   const toggleVideo = useCallback((enabled: boolean) => {
@@ -119,69 +125,48 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
       if (isScreenSharing) {
         // Stop screen sharing
         if (screenShareStream.current) {
-          screenShareStream.current.getTracks().forEach(track => track.stop());
+          screenShareStream.current.getTracks().forEach((track: MediaStreamTrack) => track.stop());
           screenShareStream.current = null;
         }
         // Restore camera
         if (localStream) {
-          const videoTrack = localStream.getVideoTracks()[0];
-          if (videoTrack) {
-            videoTrack.enabled = true;
-          }
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+          setLocalStream(stream);
         }
       } else {
         // Start screen sharing
         const stream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
-          audio: false,
+          audio: true,
         });
-
-        // Pause camera
-        if (localStream) {
-          const videoTrack = localStream.getVideoTracks()[0];
-          if (videoTrack) {
-            videoTrack.enabled = false;
-          }
-        }
-
         screenShareStream.current = stream;
-        
-        // Handle screen share ending
-        stream.getVideoTracks()[0].onended = () => {
-          toggleScreenShare();
-        };
+        setLocalStream(stream);
       }
       setIsScreenSharing(!isScreenSharing);
     } catch (error) {
       console.error('Error toggling screen share:', error);
+      showNotification({
+        title: 'Error',
+        message: 'Could not share screen',
+        color: 'red',
+      });
     }
   }, [isScreenSharing, localStream]);
-
-  // Add participant
-  const addParticipant = useCallback((id: string, name: string, stream: MediaStream, isHost = false) => {
-    setParticipants(prev => [
-      ...prev.filter(p => p.id !== id),
-      { id, name, stream, isHost }
-    ]);
-  }, []);
-
-  // Remove participant
-  const removeParticipant = useCallback((id: string) => {
-    setParticipants(prev => {
-      const participant = prev.find(p => p.id === id);
-      if (participant?.stream) {
-        participant.stream.getTracks().forEach(track => track.stop());
-      }
-      return prev.filter(p => p.id !== id);
-    });
-  }, []);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      stopStream();
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+      if (screenShareStream.current) {
+        screenShareStream.current.getTracks().forEach(track => track.stop());
+      }
     };
-  }, [stopStream]);
+  }, [localStream]);
 
   return (
     <StreamContext.Provider
@@ -206,10 +191,10 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
   );
 }
 
-export const useStream = () => {
+export function useStream() {
   const context = useContext(StreamContext);
   if (!context) {
     throw new Error('useStream must be used within a StreamProvider');
   }
   return context;
-};
+}
