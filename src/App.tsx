@@ -7,8 +7,8 @@ import { ModalsProvider } from '@mantine/modals';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// Import React to ensure JSX works
-import React from 'react';
+// Import React and type definitions
+import React, { ReactNode, JSX } from 'react';
 
 // Contexts
 const AuthContext = React.createContext({});
