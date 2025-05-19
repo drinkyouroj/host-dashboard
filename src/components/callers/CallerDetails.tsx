@@ -165,19 +165,22 @@ export function CallerDetails({
       </Paper>
 
       <Group grow>
-        {caller.status === 'on-air' ? (
+        {caller.status === 'live' ? (
           <>
             <Button 
               leftSection={<IconVolume size={16} />} 
               variant={isMuted ? 'filled' : 'outline'}
               onClick={() => onMuteToggle(caller.id, !isMuted)}
+              style={{ transition: 'all 0.2s' }}
             >
               {isMuted ? 'Unmute' : 'Mute'}
             </Button>
             <Button
               leftSection={<IconPhoneOff size={16} />}
               color="red"
+              variant="filled"
               onClick={() => onEndCall(caller.id)}
+              style={{ transition: 'all 0.2s' }}
             >
               End Call
             </Button>
@@ -186,10 +189,12 @@ export function CallerDetails({
           <Button
             leftSection={<IconPhone size={16} />}
             color="green"
+            variant="filled"
             onClick={() => onPromoteToLive(caller.id)}
             fullWidth
+            style={{ transition: 'all 0.2s' }}
           >
-            Put On Air
+            {caller.status === 'waiting' ? 'Put On Air' : 'Reconnect'}
           </Button>
         )}
       </Group>
