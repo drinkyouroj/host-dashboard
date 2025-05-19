@@ -11,24 +11,21 @@ const mockCallers: Caller[] = [
     name: 'John Doe',
     phone: '+1 (555) 123-4567',
     status: 'waiting',
-    joinedAt: new Date(Date.now() - 5 * 60 * 1000),
-    notes: 'Regular caller, interested in topic #3'
+    joinedAt: new Date(Date.now() - 5 * 60 * 1000)
   },
   {
     id: '2',
     name: 'Jane Smith',
     phone: '+1 (555) 987-6543',
     status: 'waiting',
-    joinedAt: new Date(Date.now() - 2 * 60 * 1000),
-    notes: 'First-time caller'
+    joinedAt: new Date(Date.now() - 2 * 60 * 1000)
   },
   {
     id: '3',
     name: 'Robert Johnson',
     phone: '+1 (555) 456-7890',
     status: 'live',
-    joinedAt: new Date(Date.now() - 10 * 60 * 1000),
-    notes: 'Expert on today\'s topic'
+    joinedAt: new Date(Date.now() - 10 * 60 * 1000)
   }
 ];
 
