@@ -23,7 +23,8 @@ import {
   rem,
   SimpleGrid,
   MantineTheme,
-  GridColProps
+  GridColProps,
+  TextProps
 } from '@mantine/core';
 import styles from './HostDashboard.module.css';
 import { 
@@ -266,16 +267,16 @@ export default function HostDashboard() {
           {/* Main Stage */}
           <Grid.Col span={{ base: 12, md: 8 }}>
             <Card withBorder radius="md" h="100%">
-              <div className={classes.videoContainer}>
+              <div className={styles.videoContainer}>
                 <video 
                   ref={videoRef}
-                  className={classes.video}
+                  className={styles.video}
                   autoPlay 
                   playsInline 
                   muted 
                   // This would be the host's camera feed
                 />
-                <div className={classes.controls}>
+                <div className={styles.controls}>
                   <ActionIcon variant="filled" size="lg" radius="xl">
                     <IconVolume size={20} />
                   </ActionIcon>
@@ -294,7 +295,7 @@ export default function HostDashboard() {
               <Title order={4} mt="md">Live Participants</Title>
               <Grid mt="md">
                 {liveCallers.map((caller) => (
-                  <Grid.Col key={caller.id} span={12} md={{ span: 6 }}>
+                  <Grid.Col key={caller.id} span={12} {...{ md: 6 } as GridColProps}>
                     <CallerCard 
                       caller={caller} 
                       isLive 
@@ -331,7 +332,7 @@ export default function HostDashboard() {
                 </Button>
               </Group>
               
-              <ScrollArea className={classes.queueList}>
+              <ScrollArea className={styles.queueList}>
                 <Stack gap="sm">
                   {callers.length > 0 ? (
                     callers.map((caller) => (
@@ -344,9 +345,7 @@ export default function HostDashboard() {
                     ))
                   ) : (
                     <Paper p="md" withBorder>
-                      <Text align="center" color="dimmed">
-                        No callers in queue
-                      </Text>
+                      <Text ta="center" c="dimmed">No callers in queue. Add callers to get started.</Text>
                     </Paper>
                   )}
                 </Stack>
