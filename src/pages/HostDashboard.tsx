@@ -276,21 +276,28 @@ export default function HostDashboard() {
   };
 
   // Helper function to convert Caller to UICaller
-  const toUICaller = useCallback((caller: Caller): UICaller => {
-    // Convert status to UI status
+  const toUICaller = useCallback((caller: Caller | UICaller): UICaller => {
+    // If it's already a UICaller, return it as is
+    if ('isMuted' in caller && 'isPriority' in caller) {
+      return caller as UICaller;
+    }
+
+    // Otherwise, convert from Caller to UICaller
+    const baseCaller = caller as Caller;
     let uiStatus: 'waiting' | 'on-air' | 'completed' | 'rejected';
-    if (caller.status === 'live') {
+    
+    if (baseCaller.status === 'live') {
       uiStatus = 'on-air';
-    } else if (caller.status === 'waiting' || caller.status === 'rejected') {
-      uiStatus = caller.status;
+    } else if (baseCaller.status === 'waiting' || baseCaller.status === 'rejected') {
+      uiStatus = baseCaller.status;
     } else {
       uiStatus = 'completed';
     }
 
     return {
-      ...caller,
-      phoneNumber: caller.phone || 'Unknown',
-      waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
+      ...baseCaller,
+      phoneNumber: baseCaller.phone || 'Unknown',
+      waitTime: Math.floor((new Date().getTime() - new Date(baseCaller.joinedAt).getTime()) / 60000),
       status: uiStatus,
       isMuted: false,
       isPriority: false
