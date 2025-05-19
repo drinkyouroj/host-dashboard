@@ -16,6 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved UI/UX for better usability
 - Enhanced error handling and user feedback
 
+## [0.1.1] - 2025-05-19
+
+### Added
+- Priority toggle functionality for callers
+- Caller notes feature
+- Status management for callers (waiting, live, rejected)
+- Mute/unmute functionality
+
+### Fixed
+- TypeScript type definitions for caller management
+- Improved state management for caller updates
+- Fixed UI issues in the caller list and details components
+
 ## [0.1.0] - 2025-05-19
 
 ### Added
