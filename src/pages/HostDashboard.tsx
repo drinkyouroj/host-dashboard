@@ -1,13 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useShow } from '../contexts/ShowContext';
-import { CallerList } from '../components/callers/CallerList';
-import { CallerDetails } from '../components/callers/CallerDetails';
 import { showNotification } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
-import type { Caller } from '../contexts/ShowContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// UI Components
+// Mantine UI Components
 import { 
   Container, 
   Grid, 
@@ -29,12 +25,13 @@ import {
   useMantineTheme,
   rem,
   SimpleGrid,
-  MantineTheme,
-  GridColProps,
-  TextProps,
   Tabs,
-  rem as mantineRem
+  type MantineTheme,
+  type GridColProps,
+  type TextProps
 } from '@mantine/core';
+
+// Tabler Icons
 import { 
   IconPhoneCall, 
   IconPhoneOff, 
@@ -52,6 +49,15 @@ import {
   IconUsers
 } from '@tabler/icons-react';
 
+// App Components and Contexts
+import { useAuth } from '../contexts/AuthContext';
+import { useShow, type Caller } from '../contexts/ShowContext';
+import { CallerList } from '../components/callers/CallerList';
+import { CallerDetails } from '../components/callers/CallerDetails';
+
+// Styles
+import styles from './HostDashboard.module.css';
+
 // Extend the Caller type for UI purposes
 interface UICaller extends Omit<Caller, 'status'> {
   phoneNumber: string;
@@ -60,8 +66,6 @@ interface UICaller extends Omit<Caller, 'status'> {
   isPriority: boolean;
   status: 'waiting' | 'on-air' | 'completed' | 'rejected';
 }
-import { motion, AnimatePresence } from 'framer-motion';
-import styles from './HostDashboard.module.css';
 
 const CallerCard = ({ 
   caller, 
