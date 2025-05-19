@@ -278,23 +278,35 @@ export default function HostDashboard() {
     }
   }, [callerState.isMuted, selectedCaller, updateCallerState]);
 
-  const handlePriorityToggle = useCallback((callerId: string) => {
-    const newPriority = !callerState.isPriority[callerId];
+  const handlePriorityToggle = useCallback((callerId: string, isPriority: boolean) => {
+    console.log('Toggling priority for', callerId, 'to', isPriority);
+    
+    // Update the caller's priority in the global state
     updateCallerState({
       isPriority: {
         ...callerState.isPriority,
-        [callerId]: newPriority
+        [callerId]: isPriority
       }
     });
     
-    // Update selected caller if it's the one being prioritized
+    // Update the selected caller if it's the one being prioritized
     if (selectedCaller?.id === callerId) {
       setSelectedCaller(prev => prev ? { 
         ...prev, 
-        isPriority: newPriority
+        isPriority 
       } : null);
     }
-  }, [callerState.isPriority, selectedCaller, updateCallerState]);
+    
+    // Show a notification for better user feedback
+    const caller = allCallers.find(c => c.id === callerId);
+    if (caller) {
+      showNotification({
+        title: isPriority ? 'Caller Prioritized' : 'Priority Removed',
+        message: `${caller.name} ${isPriority ? 'added to' : 'removed from'} priority`,
+        color: isPriority ? 'yellow' : 'gray'
+      });
+    }
+  }, [callerState.isPriority, selectedCaller, updateCallerState, allCallers]);
 
   const handlePromoteToLive = useCallback((callerId: string) => {
     moveToLive(callerId);

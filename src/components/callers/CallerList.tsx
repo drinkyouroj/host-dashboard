@@ -119,13 +119,28 @@ export function CallerList({
         >
           <Group justify="space-between">
             <Group>
-              <Avatar color={caller.isPriority ? 'yellow' : 'blue'} radius="xl">
+              <Avatar 
+                color={caller.isPriority ? 'yellow' : 'blue'} 
+                radius="xl"
+                style={{
+                  transition: 'all 0.2s',
+                  border: caller.isPriority ? '2px solid var(--mantine-color-yellow-6)' : 'none'
+                }}
+              >
                 {caller.name.charAt(0).toUpperCase()}
               </Avatar>
               <Box>
                 <Group gap={4} align="center">
-                  <Text fw={500}>{caller.name}</Text>
-                  {caller.isPriority && <IconStar size={16} color="var(--mantine-color-yellow-6)" />}
+                  <Text fw={500} style={{ transition: 'color 0.2s' }}>
+                    {caller.name}
+                  </Text>
+                  {caller.isPriority && (
+                    <IconStar 
+                      size={16} 
+                      fill="currentColor" 
+                      color="var(--mantine-color-yellow-6)"
+                    />
+                  )}
                 </Group>
                 <Text size="xs" c="dimmed">{caller.phoneNumber}</Text>
                 <Text size="xs" c="dimmed">{formatWaitTime(caller.waitTime)}</Text>

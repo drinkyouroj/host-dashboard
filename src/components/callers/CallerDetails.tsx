@@ -37,11 +37,16 @@ export function CallerDetails({
 
   if (!caller) {
     return (
-      <Box p="md" style={{ textAlign: 'center' }}>
-        <Text size="sm" c="dimmed">Select a caller to view details</Text>
-      </Box>
+      <Paper p="md" withBorder>
+        <Text c="dimmed" ta="center" py="md">
+          Select a caller to view details
+        </Text>
+      </Paper>
     );
   }
+  
+  // Derive the priority status from the caller prop
+  const isPriority = caller.isPriority || false;
 
   // Helper function to get status color
   const getStatusColor = (status: string) => {
@@ -64,7 +69,6 @@ export function CallerDetails({
     phoneNumber = 'Unknown',
     waitTime = 0,
     isMuted = false,
-    isPriority = false,
     notes = '',
     status = 'waiting',
     name = 'Unknown Caller',
@@ -149,10 +153,12 @@ export function CallerDetails({
           mb="md"
         />
         <Button 
-          leftSection={<IconStar size={16} />} 
+          leftSection={<IconStar size={16} fill={isPriority ? 'currentColor' : 'none'} />}
           variant={isPriority ? 'filled' : 'outline'}
           color="yellow"
           onClick={() => onPriorityToggle(caller.id, !isPriority)}
+          style={{ transition: 'all 0.2s' }}
+          aria-label={isPriority ? 'Remove priority' : 'Make priority'}
         >
           {isPriority ? 'Priority' : 'Make Priority'}
         </Button>
