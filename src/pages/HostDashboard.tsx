@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useShow } from '../contexts/ShowContext';
+import { CallerList } from '../components/callers/CallerList';
+import { CallerDetails } from '../components/callers/CallerDetails';
+import { showNotification } from '@mantine/notifications';
+import { useDisclosure } from '@mantine/hooks';
+import type { Caller } from '../contexts/ShowContext';
 
-
+// UI Components
 import { 
   Container, 
   Grid, 
@@ -30,7 +35,6 @@ import {
   Tabs,
   rem as mantineRem
 } from '@mantine/core';
-import styles from './HostDashboard.module.css';
 import { 
   IconPhoneCall, 
   IconPhoneOff, 
@@ -48,10 +52,6 @@ import {
   IconUsers
 } from '@tabler/icons-react';
 
-// Import our components
-import { CallerList } from '../components/callers/CallerList';
-import type { Caller } from '../contexts/ShowContext';
-
 // Extend the Caller type for UI purposes
 interface UICaller extends Omit<Caller, 'status'> {
   phoneNumber: string;
@@ -60,10 +60,8 @@ interface UICaller extends Omit<Caller, 'status'> {
   isPriority: boolean;
   status: 'waiting' | 'on-air' | 'completed' | 'rejected';
 }
-import { CallerDetails } from '../components/callers/CallerDetails';
-import { showNotification } from '@mantine/notifications';
-import { useDisclosure } from '@mantine/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
+import styles from './HostDashboard.module.css';
 
 const CallerCard = ({ 
   caller, 
@@ -278,26 +276,14 @@ export default function HostDashboard() {
   };
 
   const handleSelectCaller = useCallback((caller: Caller) => {
-    // Map the status to our UI status
-    let uiStatus: 'waiting' | 'on-air' | 'completed' | 'rejected';
-    switch (caller.status) {
-      case 'live':
-        uiStatus = 'on-air';
-        break;
-      case 'waiting':
-      case 'rejected':
-        uiStatus = caller.status;
-        break;
-      default:
-        uiStatus = 'completed';
-    }
-
     // Create a new UI caller object
     const uiCaller: UICaller = {
       ...caller,
       phoneNumber: caller.phone || 'Unknown',
       waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
-      status: uiStatus,
+      // Map 'live' status to 'on-air' for UI display
+      status: caller.status === 'live' ? 'on-air' : 
+              caller.status === 'waiting' || caller.status === 'rejected' ? caller.status : 'completed',
       isMuted: false,
       isPriority: false
     };

@@ -25,6 +25,8 @@ import {
 
 import type { Caller } from '../../contexts/ShowContext';
 
+export type { Caller };
+
 // Create a UI-specific status type that maps to our status values
 type UICallerStatus = 'waiting' | 'on-air' | 'completed' | 'rejected';
 
