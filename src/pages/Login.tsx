@@ -17,7 +17,7 @@ export default function Login() {
       password: 'password',
     },
     validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
+      email: (value: string) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
     },
   });
 
@@ -35,10 +35,10 @@ export default function Login() {
 
   return (
     <Container size={420} my={40}>
-      <Title align="center" sx={{ fontWeight: 900 }}>
+      <Title ta="center" fw={900}>
         Welcome back!
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt={5}>
+      <Text c="dimmed" size="sm" ta="center" mt={5}>
         Sign in to your host dashboard
       </Text>
 
@@ -48,14 +48,14 @@ export default function Login() {
             <TextInput
               label="Email"
               placeholder="your@email.com"
-              icon={<IconAt size={16} />}
+              leftSection={<IconAt size={16} />}
               required
               {...form.getInputProps('email')}
             />
             <PasswordInput
               label="Password"
               placeholder="Your password"
-              icon={<IconLock size={16} />}
+              leftSection={<IconLock size={16} />}
               required
               {...form.getInputProps('password')}
             />
@@ -66,7 +66,7 @@ export default function Login() {
         </form>
       </Paper>
       
-      <Text color="dimmed" size="sm" align="center" mt={20}>
+      <Text c="dimmed" size="sm" ta="center" mt={20}>
         Demo credentials: host@example.com / password
       </Text>
     </Container>
