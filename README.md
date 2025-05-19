@@ -1,46 +1,176 @@
-# Getting Started with Create React App
+# Call-In Show Host Dashboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A professional dashboard for managing live call-in shows with video streaming capabilities, built with React, TypeScript, and the Datagram SDK.
+
+![Dashboard Preview](public/dashboard-preview.png)
+
+## Features
+
+- **Live Show Management**
+  - Start/end shows with custom names
+  - Real-time show status tracking
+  - Clean, intuitive interface
+
+- **Caller Management**
+  - Queue system for incoming callers
+  - Caller information tracking
+  - One-click promotion to live
+
+- **Video Streaming**
+  - Powered by Datagram SDK
+  - Multiple participant support
+  - Media controls (mute, camera, etc.)
+
+- **Authentication**
+  - Secure login system
+  - Protected routes
+  - Session management
+
+## Prerequisites
+
+- Node.js 16+ (18+ recommended)
+- npm or yarn
+- Datagram SDK credentials
+
+## Getting Started
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/call-in-show-dashboard.git
+   cd call-in-show-dashboard
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn
+   ```
+
+3. **Environment Setup**
+   Create a `.env` file in the root directory with your Datagram SDK credentials:
+   ```env
+   REACT_APP_DATAGRAM_API_KEY=your_api_key_here
+   REACT_APP_DATAGRAM_ORIGIN=https://your-origin-here.com
+   ```
+
+4. **Start the development server**
+   ```bash
+   npm start
+   # or
+   yarn start
+   ```
+
+5. **Open in your browser**
+   The app will be available at [http://localhost:3000](http://localhost:3000)
+
+## Demo Credentials
+
+- **Email**: host@example.com
+- **Password**: password
+
+## Project Structure
+
+```
+src/
+├── assets/           # Static assets (images, fonts, etc.)
+├── components/       # Reusable UI components
+├── contexts/         # React context providers
+│   ├── AuthContext.tsx  # Authentication state
+│   └── ShowContext.tsx  # Show and caller state
+├── hooks/            # Custom React hooks
+├── pages/            # Page components
+│   ├── Login.tsx     # Login page
+│   └── HostDashboard.tsx  # Main dashboard
+├── types/            # TypeScript type definitions
+└── utils/            # Utility functions
+```
+
+## Datagram SDK Integration
+
+The application integrates with the Datagram SDK for real-time video streaming. Key integration points include:
+
+1. **Initialization**
+   ```typescript
+   import { Client, Conference } from '@datagram-network/conference-sdk';
+   
+   const client = Client.create({
+     alias: 'your-show-id',
+     origin: process.env.REACT_APP_DATAGRAM_ORIGIN,
+   });
+   
+   const conference = new Conference(client, {
+     skipMediaSettings: true,
+     turnOnCam: true,
+     turnOnMic: true,
+   });
+   ```
+
+2. **Event Handling**
+   ```typescript
+   window.addEventListener('message', (event) => {
+     switch (event.data) {
+       case 'call_ended':
+         // Handle call end
+         break;
+       case 'call-ready':
+         // Call is ready
+         break;
+       // Other events...
+     }
+   });
+   ```
 
 ## Available Scripts
 
-In the project directory, you can run:
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run tests
+- `npm run lint` - Run ESLint
+- `npm run format` - Format code with Prettier
 
-### `npm start`
+## Environment Variables
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `REACT_APP_DATAGRAM_API_KEY` | Your Datagram API key | Yes | - |
+| `REACT_APP_DATAGRAM_ORIGIN` | Your application's origin | Yes | `http://localhost:3000` |
+| `REACT_APP_API_URL` | Backend API URL | No | `http://localhost:5000` |
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Deployment
 
-### `npm test`
+### Building for Production
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npm run build
+```
 
-### `npm run build`
+This will create a `build` directory with optimized production build.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Docker
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+A `Dockerfile` is included for containerized deployment:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+docker build -t call-in-show-dashboard .
+docker run -p 3000:80 call-in-show-dashboard
+```
 
-### `npm run eject`
+## Contributing
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## License
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Acknowledgments
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+- [Datagram SDK](https://sdk.datagram.network/) for video streaming
+- [Mantine](https://mantine.dev/) for UI components
+- [React](https://reactjs.org/) for the frontend framework
+- [TypeScript](https://www.typescriptlang.org/) for type safety
