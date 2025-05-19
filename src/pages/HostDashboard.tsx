@@ -372,7 +372,12 @@ export default function HostDashboard() {
 
   // Helper function to convert Caller to UICaller for display
   const toUICaller = useCallback((caller: Caller | UICaller): UICaller => {
-    // If it's already a UICaller, return it with updated waitTime
+    // Get the current state for this caller
+    const callerMuted = callerState.isMuted[caller.id] || false;
+    const callerPriority = callerState.isPriority[caller.id] || false;
+    const callerNotes = callerState.notes[caller.id] || '';
+    
+    // If it's already a UICaller, return it with updated waitTime and state
     if ('phoneNumber' in caller) {
       return {
         ...caller,
@@ -381,7 +386,10 @@ export default function HostDashboard() {
           (caller.status === 'live' ? 'On Air' : 
            caller.status === 'waiting' ? 'Waiting' :
            caller.status === 'rejected' ? 'Rejected' :
-           caller.status)
+           caller.status),
+        isMuted: callerMuted,
+        isPriority: callerPriority,
+        notes: callerNotes
       };
     }
 
@@ -407,15 +415,15 @@ export default function HostDashboard() {
       status: status,
       connectionId: caller.connectionId,
       
-      // UICaller specific properties
+      // UICaller specific properties with state from callerState
       phoneNumber: caller.phone || 'Unknown',
       waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
       displayStatus: statusMap[status] || status,
-      isMuted: false,
-      isPriority: false,
-      notes: ''
+      isMuted: callerMuted,
+      isPriority: callerPriority,
+      notes: callerNotes
     };
-  }, []);
+  }, [callerState]);
   
   // Convert all callers to UICaller objects
   const allUICallers = useMemo(() => {
@@ -423,8 +431,10 @@ export default function HostDashboard() {
   }, [allCallers, toUICaller]);
 
   const handleSelectCaller = useCallback((caller: UICaller) => {
-    setSelectedCaller(caller);
-  }, []);
+    // Find the latest version of this caller from allUICallers
+    const latestCaller = allUICallers.find(c => c.id === caller.id) || caller;
+    setSelectedCaller(latestCaller);
+  }, [allUICallers]);
 
   // In a real app, we would set up WebRTC connections here
   useEffect(() => {
