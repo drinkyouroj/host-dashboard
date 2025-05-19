@@ -28,7 +28,7 @@ export function StreamView({ isHost = false, className = '' }: StreamViewProps) 
   const mainParticipant = hostParticipant || (remoteParticipants.length > 0 ? remoteParticipants[0] : null);
 
   return (
-    <Stack spacing="md" className={className}>
+    <Stack gap="md" className={className}>
       {/* Main video area */}
       <Paper withBorder radius="md" p="md" style={{ flex: 1, minHeight: '60vh' }}>
         {mainParticipant ? (
@@ -57,7 +57,7 @@ export function StreamView({ isHost = false, className = '' }: StreamViewProps) 
       {/* Local participant (if exists) */}
       {localParticipant && (
         <Paper withBorder radius="md" p="md">
-          <Text size="sm" weight={500} mb="sm">Your Camera</Text>
+          <Text size="sm" fw={500} mb="sm">Your Camera</Text>
           <VideoStream
             stream={localStream}
             participantName="You"
@@ -70,12 +70,12 @@ export function StreamView({ isHost = false, className = '' }: StreamViewProps) 
       {/* Other participants grid */}
       {remoteParticipants.length > 1 && (
         <>
-          <Text size="sm" weight={500}>Other Participants ({remoteParticipants.length - 1})</Text>
+          <Text size="sm" fw={500}>Other Participants ({remoteParticipants.length - 1})</Text>
           <Grid>
             {remoteParticipants
               .filter(p => p !== mainParticipant)
               .map(participant => (
-                <Grid.Col key={participant.id} span={12} md={6} lg={4}>
+                <Grid.Col key={participant.id} span={12} style={{ '@media (min-width: 768px)': { flex: '0 0 50%' }, '@media (min-width: 1024px)': { flex: '0 0 33.333%' } }}>
                   <VideoStream
                     stream={participant.stream}
                     participantName={participant.name}

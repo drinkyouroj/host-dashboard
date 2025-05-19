@@ -1,5 +1,5 @@
-import { Container, Title, Paper, Text, Button, Stack } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { Container, Title, Paper, Text, Button, Stack, TextInput, Box, Group } from '@mantine/core';
+import { useEffect, useState, ChangeEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { StreamView } from '../components/stream/StreamView';
 import { StreamProvider } from '../contexts/stream/StreamContext';
@@ -26,9 +26,9 @@ export function GuestView() {
     return (
       <Container size="sm" py="xl">
         <Paper p="xl" radius="md" withBorder>
-          <Stack spacing="md">
-            <Title order={2} align="center">Join Show</Title>
-            <Text color="dimmed" align="center">
+          <Stack gap="md">
+            <Title order={2} ta="center">Join Show</Title>
+            <Text c="dimmed" ta="center">
               You're about to join the show as a guest
             </Text>
             
@@ -36,7 +36,7 @@ export function GuestView() {
               label="Your Name"
               placeholder="Enter your name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
               required
             />
             
@@ -59,7 +59,7 @@ export function GuestView() {
     <StreamProvider isHost={false}>
       <Container fluid p={0} style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Box p="md" style={{ borderBottom: '1px solid #e9ecef' }}>
-          <Group position="apart">
+          <Group justify="space-between">
             <Title order={3}>Live Show</Title>
             <Button variant="outline" onClick={() => setJoined(false)}>
               Leave Show
