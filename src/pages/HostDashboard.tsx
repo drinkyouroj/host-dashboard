@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useShow } from '../contexts/ShowContext';
+
+
 import { 
   Container, 
   Grid, 
@@ -162,6 +164,9 @@ export default function HostDashboard() {
     currentShow
   } = useShow();
   
+  // Get the current show name or use a default
+  const currentShowName = currentShow || 'Untitled Show';
+  
   const [activeTab, setActiveTab] = useState<string | null>('callers');
   const [selectedCaller, setSelectedCaller] = useState<Caller | null>(null);
   const [opened, { open, close }] = useDisclosure(false);
@@ -280,106 +285,182 @@ export default function HostDashboard() {
   }, [liveCallers]);
 
   return (
-    <Container size="xl" py="md">
-      <Group justify="space-between" mb="xl">
-        <div>
-          <Title order={2}>
-            {isShowLive ? currentShow : 'Host Dashboard'}
+    <Container size="xl" py="md" className={styles.dashboardContainer}>
+      <header className={styles.header}>
+        <Group justify="space-between" align="center">
+          <Title order={2} className={styles.title}>
+            {isShowLive ? (
+              <Group gap="xs">
+                <Box className={styles.liveIndicator} />
+                <Text>LIVE: {currentShowName}</Text>
+              </Group>
+            ) : (
+              'Host Dashboard'
+            )}
           </Title>
-          <Text color="dimmed">
-            Welcome back, {user?.name}
-          </Text>
-        </div>
-        <Group>
-          {isShowLive ? (
+          <Group>
+            {isShowLive ? (
+              <Button 
+                leftSection={<IconBroadcast size={18} />} 
+                color="red"
+                onClick={handleEndShow}
+                variant="outline"
+              >
+                End Show
+              </Button>
+            ) : (
+              <Button 
+                leftSection={<IconBroadcast size={18} />} 
+                onClick={handleStartShow}
+              >
+                Start Show
+              </Button>
+            )}
             <Button 
-              leftSection={<IconBroadcast size={16} />}
-              color="red"
-              onClick={handleEndShow}
-              variant="light"
+              leftSection={<IconUserPlus size={18} />} 
+              variant="outline"
+              onClick={open}
             >
-              End Show
+              Add Caller
             </Button>
-          ) : (
             <Button 
-              leftSection={<IconBroadcast size={16} />}
-              onClick={handleStartShow}
+              variant="subtle" 
+              onClick={logout}
+              leftSection={<IconSettings size={18} />}
             >
-              Start Show
+              Settings
             </Button>
-          )}
-          <Button
-            variant="default"
-            leftSection={<IconSettings size={16} />}
-            onClick={() => {}}
-          >
-            Settings
-          </Button>
+          </Group>
         </Group>
-      </Group>
+      </header>
 
       {isShowLive ? (
-        <Grid>
-          {/* Main Stage */}
-          <Grid.Col span={{ base: 12, md: 8 }}>
-            <Card withBorder radius="md" h="100%">
-              <div className={styles.videoContainer}>
-                <video 
-                  ref={videoRef}
-                  className={styles.video}
-                  autoPlay 
-                  playsInline 
-                  muted 
-                  // This would be the host's camera feed
-                />
-                <div className={styles.controls}>
-                  <ActionIcon variant="filled" size="lg" radius="xl">
-                    <IconVolume size={20} />
-                  </ActionIcon>
-                  <ActionIcon variant="filled" size="lg" radius="xl">
-                    <IconMicrophoneOff size={20} />
-                  </ActionIcon>
-                  <ActionIcon variant="filled" size="lg" radius="xl">
-                    <IconVideoOff size={20} />
-                  </ActionIcon>
-                  <ActionIcon variant="filled" size="lg" radius="xl">
-                    <IconScreenShare size={20} />
-                  </ActionIcon>
-                </div>
+        <Tabs 
+          value={activeTab} 
+          onChange={setActiveTab}
+          defaultValue="callers"
+          mt="md"
+        >
+          <Tabs.List>
+            <Tabs.Tab value="callers" leftSection={<IconUsers size={14} />}>
+              Call Management
+            </Tabs.Tab>
+            <Tabs.Tab value="legacy" leftSection={<IconList size={14} />}>
+              Legacy View
+            </Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value="callers" pt="md">
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 5 }}>
+                <Paper p="md" withBorder h="100%">
+                  <Group justify="space-between" mb="md">
+                    <Text fw={600}>Call Queue</Text>
+                    <Text size="sm" c="dimmed">
+                      {callers.length} waiting • {liveCallers.length} on air
+                    </Text>
+                  </Group>
+                  <CallerList 
+                    callers={allCallers}
+                    onSelectCaller={setSelectedCaller}
+                    onMuteToggle={handleMuteToggle}
+                    onPromoteToLive={handlePromoteToLive}
+                    onEndCall={handleEndCall}
+                  />
+                </Paper>
+              </Grid.Col>
+              
+              <Grid.Col span={{ base: 12, md: 7 }}>
+                <Paper p="md" withBorder h="100%">
+                  <Text fw={600} mb="md">Caller Details</Text>
+                  <CallerDetails
+                    caller={selectedCaller}
+                    onMuteToggle={handleMuteToggle}
+                    onPromoteToLive={handlePromoteToLive}
+                    onEndCall={handleEndCall}
+                    onAddNote={handleAddNote}
+                  />
+                </Paper>
+              </Grid.Col>
+            </Grid>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="legacy" pt="md">
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, lg: 4 }}>
+                <Card withBorder h="100%">
+                  <Text fw={500} mb="md">Call Queue ({callers.length})</Text>
+                  <ScrollArea h={300}>
+                    <Stack gap="xs">
+                      {callers.length > 0 ? (
+                        callers.map((caller) => (
+                          <CallerCard 
+                            key={caller.id} 
+                            caller={caller} 
+                            onAccept={handleAcceptCaller}
+                            onReject={handleRejectCaller}
+                          />
+                        ))
+                      ) : (
+                        <Text size="sm" c="dimmed" ta="center" py="md">
+                          No callers in queue
+                        </Text>
+                      )}
+                    </Stack>
+                  </ScrollArea>
+                </Card>
+              </Grid.Col>
+
+              <Grid.Col span={{ base: 12, lg: 8 }}>
+                <Card withBorder h="100%">
+                  <Text fw={500} mb="md">Live Callers ({liveCallers.length})</Text>
+                  <SimpleGrid 
+                    cols={{ base: 1, sm: 2 }} 
+                    spacing="md"
+                  >
+                    {liveCallers.length > 0 ? (
+                      liveCallers.map((caller) => (
+                        <CallerCard 
+                          key={caller.id} 
+                          caller={caller} 
+                          isLive 
+                          onReject={handleRejectCaller}
+                        />
+                      ))
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        No live callers. Start a show and accept callers to see them here.
                       </Text>
                     )}
-                  </Stack>
-                </ScrollArea>
-              </Card>
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, lg: 8 }}>
-              <Card withBorder h="100%">
-                <Text fw={500} mb="md">Live Callers ({liveCallers.length})</Text>
-                <SimpleGrid 
-                  cols={{ base: 1, sm: 2 }} 
-                  spacing="md"
-                >
-                  {liveCallers.length > 0 ? (
-                    liveCallers.map((caller) => (
-                      <CallerCard 
-                        key={caller.id} 
-                        caller={caller} 
-                        isLive 
-                        onReject={handleRejectCaller}
-                      />
-                    ))
-                  ) : (
-                    <Text size="sm" c="dimmed">
-                      No live callers. Start a show and accept callers to see them here.
-                    </Text>
-                  )}
-                </SimpleGrid>
-              </Card>
-            </Grid.Col>
-          </Grid>
-        </Tabs.Panel>
-      </Tabs>
+                  </SimpleGrid>
+                </Card>
+              </Grid.Col>
+            </Grid>
+          </Tabs.Panel>
+        </Tabs>
+      ) : (
+        <Paper p="xl" withBorder mt="md">
+          <Stack align="center">
+            <Title order={3}>Start a New Show</Title>
+            <Text c="dimmed" ta="center" mb="md">
+              Begin your broadcast and manage callers in real-time
+            </Text>
+            <Group>
+              <TextInput
+                placeholder="Show name"
+                value={showName}
+                onChange={(e) => setShowName(e.target.value)}
+              />
+              <Button 
+                leftSection={<IconBroadcast size={16} />}
+                onClick={handleStartShow}
+              >
+                Start Show
+              </Button>
+            </Group>
+          </Stack>
+        </Paper>
+      )}
 
       {/* Add Caller Modal */}
       <Modal 
