@@ -1,21 +1,32 @@
 import { useState } from 'react';
-import { Box, Text, Paper, Group, Avatar, Badge, ActionIcon } from '@mantine/core';
-import { IconPhone, IconPhoneOff, IconVolume, IconVolumeOff, IconStar, IconUserPlus } from '@tabler/icons-react';
+import { Box, Text, Paper, Group, Avatar, Badge, ActionIcon, Tooltip } from '@mantine/core';
+import { 
+  IconPhone, 
+  IconPhoneOff, 
+  IconVolume, 
+  IconVolumeOff, 
+  IconStar, 
+  IconUserPlus,
+  IconMicrophone,
+  IconMicrophoneOff,
+  IconBroadcast,
+  IconPhoneCall
+} from '@tabler/icons-react';
 
-export interface Caller {
-  id: string;
-  name: string;
+// Import Caller type from ShowContext
+import type { Caller } from '../../contexts/ShowContext';
+
+// Extend the Caller interface with additional properties
+interface ExtendedCaller extends Caller {
   phoneNumber: string;
-  status: 'waiting' | 'on-air' | 'completed' | 'rejected';
   waitTime: number; // in minutes
-  notes?: string;
   isMuted?: boolean;
   isPriority?: boolean;
 }
 
 interface CallerListProps {
-  callers: Caller[];
-  onSelectCaller: (caller: Caller) => void;
+  callers: ExtendedCaller[];
+  onSelectCaller: (caller: ExtendedCaller) => void;
   onMuteToggle: (callerId: string, isMuted: boolean) => void;
   onPromoteToLive: (callerId: string) => void;
   onEndCall: (callerId: string) => void;
