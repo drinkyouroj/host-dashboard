@@ -169,13 +169,10 @@ export default function HostDashboard() {
     currentShow
   } = useShow();
   
-  // Get the current show name or use a default
-  const currentShowName = currentShow || 'Untitled Show';
-  
-  const [activeTab, setActiveTab] = useState<string | null>('callers');
   const [selectedCaller, setSelectedCaller] = useState<UICaller | null>(null);
+  const [activeTab, setActiveTab] = useState<string | null>('callers');
   const [opened, { open, close }] = useDisclosure(false);
-  const [showName, setShowName] = useState('My Awesome Show');
+  const [showName, setShowName] = useState(currentShow || 'My Awesome Show');
   const [newCallerName, setNewCallerName] = useState('');
   const [newCallerEmail, setNewCallerEmail] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -333,7 +330,7 @@ export default function HostDashboard() {
             {isShowLive ? (
               <Group gap="xs">
                 <Box className={styles.liveIndicator} />
-                <Text>LIVE: {currentShowName}</Text>
+                <Text>LIVE: {currentShow || 'Untitled Show'}</Text>
               </Group>
             ) : (
               'Host Dashboard'
