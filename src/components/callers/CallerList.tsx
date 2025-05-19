@@ -13,20 +13,23 @@ import {
   IconPhoneCall
 } from '@tabler/icons-react';
 
-// Import Caller type from ShowContext
 import type { Caller } from '../../contexts/ShowContext';
 
-// Extend the Caller interface with additional properties
-interface ExtendedCaller extends Caller {
+// Create a UI-specific status type that maps to our status values
+type UICallerStatus = 'waiting' | 'on-air' | 'completed' | 'rejected';
+
+// Extend the Caller type with UI-specific properties
+interface UICaller extends Omit<Caller, 'status'> {
   phoneNumber: string;
-  waitTime: number; // in minutes
-  isMuted?: boolean;
-  isPriority?: boolean;
+  waitTime: number;
+  isMuted: boolean;
+  isPriority: boolean;
+  status: UICallerStatus;
 }
 
 interface CallerListProps {
-  callers: ExtendedCaller[];
-  onSelectCaller: (caller: ExtendedCaller) => void;
+  callers: Caller[];
+  onSelectCaller: (caller: Caller) => void;
   onMuteToggle: (callerId: string, isMuted: boolean) => void;
   onPromoteToLive: (callerId: string) => void;
   onEndCall: (callerId: string) => void;
@@ -51,6 +54,26 @@ export function CallerList({
     return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
   };
 
+  // Map the Caller to UICaller for display
+  const mapToUICaller = (caller: Caller): UICaller => {
+    const statusMap: Record<Caller['status'], UICallerStatus> = {
+      'waiting': 'waiting',
+      'live': 'on-air',
+      'rejected': 'rejected'
+    };
+
+    return {
+      ...caller,
+      phoneNumber: caller.phone || 'Unknown',
+      waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
+      status: statusMap[caller.status] || 'completed',
+      isMuted: false,
+      isPriority: false
+    };
+  };
+
+  const uiCallers = callers.map(mapToUICaller);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'on-air':
@@ -66,7 +89,7 @@ export function CallerList({
     }
   };
 
-  if (callers.length === 0) {
+  if (uiCallers.length === 0) {
     return (
       <Box p="md" style={{ textAlign: 'center' }}>
         <Text size="sm" c="dimmed">No callers in the queue</Text>
@@ -76,7 +99,7 @@ export function CallerList({
 
   return (
     <Box style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
-      {callers.map((caller) => (
+      {uiCallers.map((caller) => (
         <Paper
           key={caller.id}
           p="sm"
