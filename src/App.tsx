@@ -1,49 +1,27 @@
-import { MantineProvider, createTheme, MantineColorsTuple } from '@mantine/core';
+import { MantineProvider, createTheme } from '@mantine/core';
 import { Global } from '@emotion/react';
 import '@mantine/core/styles.css';
 import { Notifications } from '@mantine/notifications';
 import { useHotkeys, useLocalStorage } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// Import React and type definitions
-import React, { ReactNode, JSX } from 'react';
+import React, { ReactElement } from 'react';
 
-// Contexts
-const AuthContext = React.createContext({});
-const ShowContext = React.createContext({});
-const StreamContext = React.createContext({});
+// Import context providers
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ShowProvider } from './contexts/ShowContext';
+import { StreamProvider } from './contexts/StreamContext';
 
-// Mock components to satisfy TypeScript
-const HostDashboard = () => <div>Host Dashboard</div>;
-const Login = () => <div>Login</div>;
-
-// Mock hooks
-const useAuth = () => ({
-  isAuthenticated: false,
-  loading: false,
-});
-
-// Mock providers
-const AuthProvider = ({ children }: { children: React.ReactNode }) => (
-  <AuthContext.Provider value={{}}>{children}</AuthContext.Provider>
-);
-
-const ShowProvider = ({ children }: { children: React.ReactNode }) => (
-  <ShowContext.Provider value={{ addCaller: () => {} }}>{children}</ShowContext.Provider>
-);
-
-const StreamProvider = ({ children }: { children: React.ReactNode }) => (
-  <StreamContext.Provider value={{}}>{children}</StreamContext.Provider>
-);
+// Import components
+import HostDashboard from './pages/HostDashboard';
+import Login from './pages/Login';
 
 // Protected Route Component
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    // You can add a loading spinner here
     return <div>Loading...</div>;
   }
 
@@ -51,8 +29,32 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 };
+
+// Main App Wrapper
+const AppContent = () => (
+  <AuthProvider>
+    <ShowProvider>
+      <StreamProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <HostDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </StreamProvider>
+    </ShowProvider>
+  </AuthProvider>
+);
 
 const queryClient = new QueryClient();
 
@@ -116,30 +118,11 @@ function App() {
         defaultColorScheme="dark"
       >
         <GlobalStyles />
-          <ModalsProvider>
-            <Notifications position="top-right" />
-            <AuthProvider>
-              <ShowProvider>
-                <StreamProvider>
-                  <Router>
-                    <Routes>
-                      <Route path="/login" element={<Login />} />
-                      <Route
-                        path="/"
-                        element={
-                          <ProtectedRoute>
-                            <HostDashboard />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </Router>
-                </StreamProvider>
-              </ShowProvider>
-            </AuthProvider>
-          </ModalsProvider>
-        </MantineProvider>
+        <ModalsProvider>
+          <Notifications position="top-right" />
+          <AppContent />
+        </ModalsProvider>
+      </MantineProvider>
     </QueryClientProvider>
   );
 }
