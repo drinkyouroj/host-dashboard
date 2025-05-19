@@ -24,7 +24,9 @@ import {
   SimpleGrid,
   MantineTheme,
   GridColProps,
-  TextProps
+  TextProps,
+  Tabs,
+  rem as mantineRem
 } from '@mantine/core';
 import styles from './HostDashboard.module.css';
 import { 
@@ -38,8 +40,15 @@ import {
   IconVideo,
   IconVideoOff,
   IconScreenShare,
-  IconSettings
+  IconSettings,
+  IconList,
+  IconUser,
+  IconUsers
 } from '@tabler/icons-react';
+
+// Import our new components
+import { CallerList, Caller } from '../components/callers/CallerList';
+import { CallerDetails } from '../components/callers/CallerDetails';
 import { showNotification } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
