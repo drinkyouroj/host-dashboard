@@ -3,18 +3,21 @@ import { Box, Text, Paper, Group, Avatar, Badge, Stack, Textarea, Button, Divide
 import { IconPhone, IconPhoneOff, IconVolume, IconVolumeOff, IconStar, IconUserPlus, IconNote } from '@tabler/icons-react';
 import type { Caller } from '../../contexts/ShowContext';
 
-// Extend the Caller type for UI purposes
-interface UICaller extends Omit<Caller, 'status'> {
-  phoneNumber: string;
-  waitTime: number;
-  isMuted: boolean;
-  isPriority: boolean;
-  status: 'waiting' | 'on-air' | 'completed' | 'rejected';
+// Types for UI representation
+type UICallerStatus = 'waiting' | 'on-air' | 'completed' | 'rejected';
+
+// Base interface for both Caller and UICaller
+type BaseCaller = Omit<Caller, 'status'> & {
+  status: Caller['status'] | UICallerStatus;
+  phoneNumber?: string;
+  waitTime?: number;
+  isMuted?: boolean;
+  isPriority?: boolean;
   notes?: string;
-}
+};
 
 interface CallerDetailsProps {
-  caller: UICaller | null;
+  caller: BaseCaller | null;
   onMuteToggle: (callerId: string, isMuted: boolean) => void;
   onPromoteToLive: (callerId: string) => void;
   onEndCall: (callerId: string) => void;
@@ -37,6 +40,35 @@ export function CallerDetails({
       </Box>
     );
   }
+
+  // Helper function to get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'on-air':
+        return 'green';
+      case 'waiting':
+        return 'yellow';
+      case 'completed':
+        return 'blue';
+      case 'rejected':
+        return 'red';
+      default:
+        return 'gray';
+    }
+  };
+
+  // Provide default values for optional properties
+  const {
+    phoneNumber = 'Unknown',
+    waitTime = 0,
+    isMuted = false,
+    isPriority = false,
+    notes = '',
+    status = 'waiting',
+    name = 'Unknown Caller',
+    phone = '',
+    joinedAt = new Date().toISOString()
+  } = caller;
 
   const formatWaitTime = (minutes: number): string => {
     if (minutes < 1) return 'Just joined';
@@ -66,9 +98,7 @@ export function CallerDetails({
               <Text size="sm" c="dimmed">{caller.phoneNumber}</Text>
             </Box>
           </Group>
-          <Badge color={caller.status === 'on-air' ? 'green' : 'yellow'} size="lg">
-            {caller.status}
-          </Badge>
+          <Badge color={getStatusColor(status)}>{status}</Badge>
         </Group>
 
         <Group mt="md" grow>
@@ -77,8 +107,8 @@ export function CallerDetails({
             <Text fw={500}>{caller.status.charAt(0).toUpperCase() + caller.status.slice(1)}</Text>
           </Box>
           <Box>
-            <Text size="xs" c="dimmed">Wait Time</Text>
-            <Text fw={500}>{formatWaitTime(caller.waitTime)}</Text>
+            <Text size="sm" c="dimmed">Phone: {phoneNumber}</Text>
+            <Text size="sm" c="dimmed">Wait Time: {formatWaitTime(waitTime)}</Text>
           </Box>
         </Group>
       </Paper>
@@ -109,37 +139,32 @@ export function CallerDetails({
           <Text size="sm" c="dimmed" fs="italic">No notes for this caller</Text>
         )}
         
-        <Divider my="md" />
-        
         <Textarea
-          placeholder="Add a note about this caller..."
+          placeholder="Add notes about this caller..."
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          autosize
-          minRows={2}
-          mb="sm"
+          minRows={3}
+          mb="md"
         />
-        <Button
-          leftSection={<IconNote size={16} />}
-          variant="outline"
-          size="xs"
-          onClick={handleAddNote}
-          disabled={!note.trim()}
+        <Button 
+          leftSection={<IconStar size={16} />} 
+          variant={isPriority ? 'filled' : 'outline'}
+          color="yellow"
+          onClick={() => {}}
         >
-          Add Note
+          {isPriority ? 'Priority' : 'Make Priority'}
         </Button>
       </Paper>
 
       <Group grow>
         {caller.status === 'on-air' ? (
           <>
-            <Button
-              leftSection={caller.isMuted ? <IconVolumeOff size={16} /> : <IconVolume size={16} />}
-              variant="outline"
-              color={caller.isMuted ? 'red' : 'blue'}
-              onClick={() => onMuteToggle(caller.id, !caller.isMuted)}
+            <Button 
+              leftSection={<IconVolume size={16} />} 
+              variant={isMuted ? 'filled' : 'outline'}
+              onClick={() => onMuteToggle(caller.id, !isMuted)}
             >
-              {caller.isMuted ? 'Unmute' : 'Mute'}
+              {isMuted ? 'Unmute' : 'Mute'}
             </Button>
             <Button
               leftSection={<IconPhoneOff size={16} />}
