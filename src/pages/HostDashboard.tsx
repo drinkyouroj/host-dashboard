@@ -58,15 +58,8 @@ import { CallerDetails } from '../components/callers/CallerDetails';
 // Styles
 import styles from './HostDashboard.module.css';
 
-// Extend the Caller type for UI purposes
-interface UICaller extends Omit<Caller, 'status'> {
-  phoneNumber: string;
-  waitTime: number;
-  isMuted: boolean;
-  isPriority: boolean;
-  notes?: string;
-  status: 'waiting' | 'on-air' | 'completed' | 'rejected';
-}
+// Import shared types
+import type { UICaller } from '../types/caller';
 
 const CallerCard = ({ 
   caller, 
@@ -170,9 +163,23 @@ export default function HostDashboard() {
     currentShow
   } = useShow();
   
+  // UI State
   const [selectedCaller, setSelectedCaller] = useState<UICaller | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('callers');
   const [opened, { open, close }] = useDisclosure(false);
+  
+  // Caller State
+  const [callerState, setCallerState] = useState<{
+    notes: Record<string, string>;
+    isMuted: Record<string, boolean>;
+    isPriority: Record<string, boolean>;
+  }>({
+    notes: {},
+    isMuted: {},
+    isPriority: {}
+  });
+  
+  // Form State
   const [showName, setShowName] = useState(currentShow || 'My Awesome Show');
   const [newCallerName, setNewCallerName] = useState('');
   const [newCallerEmail, setNewCallerEmail] = useState('');
@@ -247,11 +254,20 @@ export default function HostDashboard() {
   const [callerMuteStatus, setCallerMuteStatus] = useState<Record<string, boolean>>({});
   const [callerPriorityStatus, setCallerPriorityStatus] = useState<Record<string, boolean>>({});
 
-  const handleMuteToggle = useCallback((callerId: string, isMuted: boolean) => {
-    setCallerMuteStatus(prev => ({
+  const updateCallerState = useCallback((updates: Partial<typeof callerState>) => {
+    setCallerState(prev => ({
       ...prev,
-      [callerId]: isMuted
+      ...updates
     }));
+  }, []);
+
+  const handleMuteToggle = useCallback((callerId: string, isMuted: boolean) => {
+    updateCallerState({
+      isMuted: {
+        ...callerState.isMuted,
+        [callerId]: isMuted
+      }
+    });
     
     // Update selected caller if it's the one being muted/unmuted
     if (selectedCaller?.id === callerId) {
@@ -260,22 +276,25 @@ export default function HostDashboard() {
         isMuted 
       } : null);
     }
-  }, [selectedCaller]);
+  }, [callerState.isMuted, selectedCaller, updateCallerState]);
 
   const handlePriorityToggle = useCallback((callerId: string) => {
-    setCallerPriorityStatus(prev => ({
-      ...prev,
-      [callerId]: !prev[callerId]
-    }));
+    const newPriority = !callerState.isPriority[callerId];
+    updateCallerState({
+      isPriority: {
+        ...callerState.isPriority,
+        [callerId]: newPriority
+      }
+    });
     
     // Update selected caller if it's the one being prioritized
     if (selectedCaller?.id === callerId) {
       setSelectedCaller(prev => prev ? { 
         ...prev, 
-        isPriority: !prev.isPriority 
+        isPriority: newPriority
       } : null);
     }
-  }, [selectedCaller]);
+  }, [callerState.isPriority, selectedCaller, updateCallerState]);
 
   const handlePromoteToLive = useCallback((callerId: string) => {
     moveToLive(callerId);
@@ -290,16 +309,14 @@ export default function HostDashboard() {
     removeCaller(callerId);
     
     // Clean up local state
-    setCallerMuteStatus(prev => {
-      const newStatus = {...prev};
-      delete newStatus[callerId];
-      return newStatus;
-    });
+    const { [callerId]: _, ...remainingMuted } = callerState.isMuted;
+    const { [callerId]: __, ...remainingPriority } = callerState.isPriority;
+    const { [callerId]: ___, ...remainingNotes } = callerState.notes;
     
-    setCallerPriorityStatus(prev => {
-      const newStatus = {...prev};
-      delete newStatus[callerId];
-      return newStatus;
+    updateCallerState({
+      isMuted: remainingMuted,
+      isPriority: remainingPriority,
+      notes: remainingNotes
     });
     
     // If the selected caller is the one being removed, clear selection
@@ -312,13 +329,15 @@ export default function HostDashboard() {
       message: 'Call has been ended',
       color: 'blue',
     });
-  }, [removeCaller, selectedCaller]);
+  }, [callerState.isMuted, callerState.isPriority, callerState.notes, removeCaller, selectedCaller, updateCallerState]);
 
   const handleAddNote = useCallback((callerId: string, note: string) => {
-    setNotes(prev => ({
-      ...prev,
-      [callerId]: note
-    }));
+    updateCallerState({
+      notes: {
+        ...callerState.notes,
+        [callerId]: note
+      }
+    });
     
     // Update selected caller's note if it's the one being updated
     if (selectedCaller?.id === callerId) {
@@ -333,7 +352,7 @@ export default function HostDashboard() {
       message: 'Note has been saved',
       color: 'green',
     });
-  }, [selectedCaller]);
+  }, [callerState.notes, selectedCaller, updateCallerState]);
 
   // Helper function to convert Caller to UICaller
   const toUICaller = useCallback((caller: Caller | UICaller): UICaller => {
@@ -341,36 +360,48 @@ export default function HostDashboard() {
     if ('isMuted' in caller && 'isPriority' in caller) {
       return {
         ...caller,
-        isMuted: callerMuteStatus[caller.id] ?? caller.isMuted,
-        isPriority: callerPriorityStatus[caller.id] ?? caller.isPriority,
-        notes: notes[caller.id] ?? caller.notes,
+        isMuted: callerState.isMuted[caller.id] ?? caller.isMuted,
+        isPriority: callerState.isPriority[caller.id] ?? caller.isPriority,
+        notes: callerState.notes[caller.id] ?? caller.notes,
         phoneNumber: caller.phoneNumber || caller.phone || 'Unknown',
         waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
-      };
-    }
+        // Ensure displayStatus is set
+    // Map status to display text
+    const statusMap: Record<string, string> = {
+      'live': 'On Air',
+      'waiting': 'Waiting',
+      'rejected': 'Rejected'
+    };
 
-    // Convert from Caller to UICaller with local state
-    const baseCaller = caller as Caller;
-    let uiStatus: 'waiting' | 'on-air' | 'completed' | 'rejected';
-    
-    if (baseCaller.status === 'live') {
-      uiStatus = 'on-air';
-    } else if (baseCaller.status === 'waiting' || baseCaller.status === 'rejected') {
-      uiStatus = baseCaller.status;
-    } else {
-      uiStatus = 'completed';
-    }
+    // Ensure the status is one of the expected values
+    const status: 'live' | 'waiting' | 'rejected' = 
+      (caller.status === 'live' || caller.status === 'waiting' || caller.status === 'rejected')
+        ? caller.status
+        : 'waiting';
 
     return {
-      ...baseCaller,
-      phoneNumber: baseCaller.phone || 'Unknown',
-      waitTime: Math.floor((new Date().getTime() - new Date(baseCaller.joinedAt).getTime()) / 60000),
-      isMuted: callerMuteStatus[baseCaller.id] ?? false,
-      isPriority: callerPriorityStatus[baseCaller.id] ?? false,
-      notes: notes[baseCaller.id] ?? '',
-      status: uiStatus
+      // Required Caller properties
+      id: caller.id,
+      name: caller.name,
+      email: caller.email,
+      joinedAt: caller.joinedAt,
+      status: status,
+      connectionId: caller.connectionId,
+      
+      // UICaller specific properties
+      phoneNumber: caller.phone || 'Unknown',
+      waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
+      displayStatus: statusMap[status] || status,
+      isMuted: false,
+      isPriority: false,
+      notes: ''
     };
-  }, [callerMuteStatus, callerPriorityStatus, notes]);
+  }, []);
+
+  // Convert all callers to UICaller objects
+  const allUICallers = useMemo(() => {
+    return allCallers.map(caller => toUICaller(caller));
+  }, [allCallers, toUICaller]);
 
   const handleSelectCaller = useCallback((caller: Caller) => {
     setSelectedCaller(toUICaller(caller));
@@ -466,8 +497,8 @@ export default function HostDashboard() {
                     </Text>
                   </Group>
                   <CallerList 
-                    callers={allCallers}
-                    onSelectCaller={(caller: Caller) => handleSelectCaller(caller)}
+                    callers={allUICallers}
+                    onSelectCaller={handleSelectCaller}
                     onMuteToggle={handleMuteToggle}
                     onPromoteToLive={handlePromoteToLive}
                     onEndCall={handleEndCall}

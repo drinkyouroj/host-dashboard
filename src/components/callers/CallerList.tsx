@@ -24,25 +24,12 @@ import {
 } from '@tabler/icons-react';
 
 import type { Caller } from '../../contexts/ShowContext';
+import type { UICaller, CallerStatus } from '../../types/caller';
 
-export type { Caller };
-
-// Import the UICaller type from the HostDashboard
-import type { UICaller } from '../../pages/HostDashboard';
-
-// Create a UI-specific status type that maps to our status values
-type UICallerStatus = UICaller['status'];
-
-// Extend the Caller type with UI-specific properties
-type UICallerExtended = UICaller & {
-  phoneNumber: string;
-  waitTime: number;
-  isMuted: boolean;
-  isPriority: boolean;
-};
+export type { Caller, UICaller };
 
 interface CallerListProps {
-  callers: Caller[];
+  callers: UICaller[];
   onSelectCaller: (caller: Caller) => void;
   onMuteToggle: (callerId: string, isMuted: boolean) => void;
   onPromoteToLive: (callerId: string) => void;
@@ -59,20 +46,14 @@ export function CallerList({
   const [selectedCallerId, setSelectedCallerId] = useState<string | null>(null);
 
   const handleCallerClick = (uiCaller: UICaller) => {
-    // Find the original caller from the callers array
+    // Find the original caller to get the full Caller object
     const originalCaller = callers.find(c => c.id === uiCaller.id);
+    
     if (originalCaller) {
       setSelectedCallerId(uiCaller.id);
-      // Call the onSelectCaller with the UI caller data
-      onSelectCaller({
-        ...originalCaller,
-        phoneNumber: uiCaller.phoneNumber,
-        waitTime: uiCaller.waitTime,
-        isMuted: uiCaller.isMuted,
-        isPriority: uiCaller.isPriority,
-        status: uiCaller.status,
-        notes: uiCaller.notes
-      });
+      // Call the onSelectCaller with the original Caller data
+      // The parent component will handle the mapping to UICaller
+      onSelectCaller(originalCaller);
     }
   };
   
@@ -91,62 +72,36 @@ export function CallerList({
     return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
   };
 
-  // Map the Caller to UICaller for display
-  const mapToUICaller = (caller: Caller): UICaller => {
-    // Map the status to our UI status
-    let uiStatus: UICallerStatus;
-    switch (caller.status) {
-      case 'live':
-        uiStatus = 'on-air';
-        break;
-      case 'waiting':
-      case 'rejected':
-        uiStatus = caller.status;
-        break;
-      default:
-        uiStatus = 'completed';
-    }
-
-    // Create a new object with only the properties that match the UICaller interface
-    const uiCaller: UICaller = {
-      ...caller,
-      phoneNumber: caller.phone || 'Unknown',
-      waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
-      status: uiStatus,
-      isMuted: false,
-      isPriority: false
+  // Sort callers by status (live first, then waiting, then rejected)
+  const sortedCallers = [...callers].sort((a, b) => {
+    // Create a mapping of status to sort order
+    const statusOrder: Record<'live' | 'waiting' | 'rejected', number> = {
+      'live': 0,      // live callers first
+      'waiting': 1,   // waiting callers second
+      'rejected': 2   // rejected callers last
     };
     
-    return uiCaller;
-  };
-
-  // Map the callers to UI callers and sort by status (on-air first, then waiting, then others)
-  const uiCallers = callers.map(mapToUICaller).sort((a, b) => {
-    const statusOrder: Record<UICallerStatus, number> = {
-      'on-air': 0,
-      'waiting': 1,
-      'rejected': 2,
-      'completed': 3
-    };
     return statusOrder[a.status] - statusOrder[b.status];
   });
+  
+  // Filter out any callers with unexpected status values
+  const uiCallers = sortedCallers.filter((caller): caller is UICaller & 
+    { status: 'live' | 'waiting' | 'rejected' } => 
+    ['live', 'waiting', 'rejected'].includes(caller.status)
+  );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'on-air':
-        return 'green';
-      case 'waiting':
-        return 'yellow';
-      case 'completed':
-        return 'blue';
-      case 'rejected':
-        return 'red';
-      default:
-        return 'gray';
-    }
+  const getStatusDisplay = (status: 'live' | 'waiting' | 'rejected'): { text: string; color: string } => {
+    // Map status to display text and color
+    const statusMap = {
+      'live': { text: 'On Air' as const, color: 'green' as const },
+      'waiting': { text: 'Waiting' as const, color: 'yellow' as const },
+      'rejected': { text: 'Rejected' as const, color: 'red' as const }
+    };
+    
+    return statusMap[status] || { text: status, color: 'gray' };
   };
 
-  if (uiCallers.length === 0) {
+  if (callers.length === 0) {
     return (
       <Box p="md" style={{ textAlign: 'center' }}>
         <Text size="sm" c="dimmed">No callers in the queue</Text>
@@ -186,11 +141,15 @@ export function CallerList({
             </Group>
             
             <Group gap={4}>
-              <Badge color={getStatusColor(caller.status)} variant="light">
-                {caller.status}
+              <Badge 
+                color={getStatusDisplay(caller.status).color}
+                variant="light"
+                size="sm"
+              >
+                {caller.displayStatus || caller.status}
               </Badge>
               
-              {caller.status === 'on-air' && (
+              {caller.status === 'live' && (
                 <ActionIcon
                   variant="subtle"
                   color={caller.isMuted ? 'red' : 'blue'}
@@ -216,7 +175,7 @@ export function CallerList({
                 </ActionIcon>
               )}
               
-              {caller.status === 'on-air' && (
+              {caller.status === 'live' && (
                 <ActionIcon
                   variant="outline"
                   color="red"
