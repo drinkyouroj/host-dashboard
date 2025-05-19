@@ -23,10 +23,9 @@ import {
   rem,
   SimpleGrid,
   MantineTheme,
-  useMantineColorScheme,
-  useComputedColorScheme,
-  CSSObject
+  GridColProps
 } from '@mantine/core';
+import styles from './HostDashboard.module.css';
 import { 
   IconPhoneCall, 
   IconPhoneOff, 
@@ -44,57 +43,6 @@ import { showNotification } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const useStyles = () => {
-  const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme();
-  
-  // Define styles as CSS-in-JS objects
-  const styles = {
-    callerCard: {
-      transition: 'transform 150ms ease, box-shadow 150ms ease',
-      '&:hover': {
-        transform: 'scale(1.01)',
-        boxShadow: theme.shadows.md,
-      },
-    } as CSSObject,
-    liveBadge: {
-      position: 'absolute' as const,
-      top: 10,
-      right: 10,
-      zIndex: 10,
-    } as CSSObject,
-    videoContainer: {
-      position: 'relative' as const,
-      paddingBottom: '56.25%', /* 16:9 */
-      backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[2],
-      borderRadius: theme.radius.md,
-      overflow: 'hidden' as const,
-    } as CSSObject,
-    video: {
-      position: 'absolute' as const,
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover' as const,
-    } as CSSObject,
-  controls: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: theme.spacing.md,
-    background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-    display: 'flex',
-    justifyContent: 'center',
-    gap: theme.spacing.md,
-  },
-  queueList: {
-    height: 400,
-  },
-}));
-
 const CallerCard = ({ 
   caller, 
   onAccept, 
@@ -106,11 +54,10 @@ const CallerCard = ({
   onReject?: (id: string) => void,
   isLive?: boolean
 }) => {
-  const { classes } = useStyles();
   const theme = useMantineTheme();
   
   return (
-    <Card withBorder p="md" radius="md" className={classes.callerCard}>
+    <Card withBorder p="md" radius="md" className={styles.callerCard}>
       <Group justify="space-between" wrap="nowrap">
         <Group gap="sm" wrap="nowrap">
           <Avatar size={40} color="blue" radius="xl">
@@ -150,16 +97,16 @@ const CallerCard = ({
       </Group>
       
       {isLive && (
-        <Box mt="md" className={classes.videoContainer}>
+        <Box mt="md" className={styles.videoContainer}>
           <video 
-            className={classes.video}
+            className={styles.video}
             autoPlay 
             playsInline 
             muted 
             // In a real app, this would be the actual video stream
             // src={caller.stream}
           />
-          <div className={classes.controls}>
+          <div className={styles.controls}>
             <ActionIcon variant="filled" size="lg" radius="xl">
               <IconVolume size={20} />
             </ActionIcon>
@@ -180,7 +127,6 @@ const CallerCard = ({
 };
 
 export default function HostDashboard() {
-  const { classes } = useStyles();
   const { user, logout } = useAuth();
   const { 
     callers, 
@@ -305,8 +251,8 @@ export default function HostDashboard() {
               Start Show
             </Button>
           )}
-          <Button 
-            variant="default" 
+          <Button
+            variant="default"
             leftIcon={<IconSettings size={16} />}
             onClick={() => {}}
           >
@@ -348,7 +294,7 @@ export default function HostDashboard() {
               <Title order={4} mt="md">Live Participants</Title>
               <Grid mt="md">
                 {liveCallers.map((caller) => (
-                  <Grid.Col key={caller.id} span={12} md={6} lg={6}>
+                  <Grid.Col key={caller.id} span={12} md={{ span: 6 }}>
                     <CallerCard 
                       caller={caller} 
                       isLive 
