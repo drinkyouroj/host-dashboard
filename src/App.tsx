@@ -41,10 +41,9 @@ const ProtectedRoute = ({ children }: { children: ReactElement }) => {
 const AppContent = () => {
   console.log('AppContent: Rendering');
   return (
-  <AuthProvider>
-    <ShowProvider>
-      <StreamProvider>
-        <Router>
+    <AuthProvider>
+      <ShowProvider>
+        <StreamProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route
@@ -57,10 +56,9 @@ const AppContent = () => {
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </Router>
-      </StreamProvider>
-    </ShowProvider>
-  </AuthProvider>
+        </StreamProvider>
+      </ShowProvider>
+    </AuthProvider>
   );
 };
 
