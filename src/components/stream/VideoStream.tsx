@@ -10,6 +10,8 @@ interface VideoStreamProps {
   stream?: MediaStream | null;
   muted?: boolean;
   autoPlay?: boolean;
+  playsInline?: boolean;
+  style?: React.CSSProperties;
 }
 
 export function VideoStream({ 
@@ -19,7 +21,9 @@ export function VideoStream({
   className = '',
   stream: externalStream,
   muted = false,
-  autoPlay = true
+  autoPlay = true,
+  playsInline = true,
+  style = {}
 }: VideoStreamProps) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [videoEnabled, setVideoEnabled] = useState(true);
@@ -149,13 +153,12 @@ export function VideoStream({
   }
 
   return (
-    <Stack gap="xs" className={className}>
-      <Paper withBorder radius="md" p="xs" style={{ position: 'relative', paddingTop: '56.25%' }}>
-        <Box 
-          component="video" 
-          ref={videoRef} 
+    <Paper withBorder p="md" className={className} style={style}>
+      <Box style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', backgroundColor: '#1a1b1e', borderRadius: '8px', overflow: 'hidden' }}>
+        <video
+          ref={videoRef}
           autoPlay={autoPlay}
-          playsInline 
+          playsInline={playsInline}
           muted={muted}
           style={{
             position: 'absolute',
@@ -164,60 +167,80 @@ export function VideoStream({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            borderRadius: '8px',
             backgroundColor: '#1a1b1e',
+            transform: videoEnabled ? 'none' : 'scaleX(-1)',
+            ...style
           }}
         />
         <Box 
           style={{
             position: 'absolute',
-            bottom: '8px',
-            left: '8px',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '8px',
+            background: 'linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
             color: 'white',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            fontSize: '14px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          {participantName} {isHost ? '(Host)' : ''}
+          <Text size="sm" fw={500}>
+            {participantName} {isHost && '(You)'}
+          </Text>
+          <Group gap="xs">
+            {!videoEnabled && (
+              <Box style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
+                <IconCameraOff size={16} />
+              </Box>
+            )}
+            {!audioEnabled && (
+              <Box style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
+                <IconMicrophoneOff size={16} />
+              </Box>
+            )}
+          </Group>
         </Box>
-      </Paper>
+      </Box>
       
-      <Group justify="center" gap="xs">
-        <Button 
-          variant={videoEnabled ? 'filled' : 'outline'} 
-          size="sm" 
-          leftSection={videoEnabled ? <IconCamera size={16} /> : <IconCameraOff size={16} />}
-          onClick={toggleVideo}
-          disabled={screenSharing || !!externalStream}
-        >
-          {videoEnabled ? 'Camera On' : 'Camera Off'}
-        </Button>
-        
-        <Button 
-          variant={audioEnabled ? 'filled' : 'outline'} 
-          size="sm" 
-          color="red"
-          leftSection={audioEnabled ? <IconMicrophone size={16} /> : <IconMicrophoneOff size={16} />}
-          onClick={toggleAudio}
-          disabled={!!externalStream}
-        >
-          {audioEnabled ? 'Mute' : 'Unmute'}
-        </Button>
-        
-        {isHost && !externalStream && (
-          <Button 
-            variant={screenSharing ? 'filled' : 'outline'} 
-            size="sm" 
-            color="violet"
+      {onMediaChange && (
+        <Group mt="xs" justify="center" gap="xs">
+          <Button
+            variant={videoEnabled ? 'filled' : 'outline'}
+            size="xs"
+            leftSection={videoEnabled ? <IconCamera size={16} /> : <IconCameraOff size={16} />}
+            onClick={() => {
+              const newState = !videoEnabled;
+              setVideoEnabled(newState);
+              onMediaChange({ video: newState, audio: audioEnabled });
+            }}
+          >
+            {videoEnabled ? 'Camera On' : 'Camera Off'}
+          </Button>
+          <Button
+            variant={audioEnabled ? 'filled' : 'outline'}
+            size="xs"
+            leftSection={audioEnabled ? <IconMicrophone size={16} /> : <IconMicrophoneOff size={16} />}
+            onClick={() => {
+              const newState = !audioEnabled;
+              setAudioEnabled(newState);
+              onMediaChange({ video: videoEnabled, audio: newState });
+            }}
+          >
+            {audioEnabled ? 'Mute' : 'Unmute'}
+          </Button>
+          <Button
+            variant={screenSharing ? 'filled' : 'outline'}
+            color={screenSharing ? 'red' : undefined}
+            size="xs"
             leftSection={screenSharing ? <IconScreenShareOff size={16} /> : <IconScreenShare size={16} />}
             onClick={toggleScreenShare}
           >
             {screenSharing ? 'Stop Sharing' : 'Share Screen'}
           </Button>
-        )}
-      </Group>
-    </Stack>
+        </Group>
+      )}
+    </Paper>
   );
 }
