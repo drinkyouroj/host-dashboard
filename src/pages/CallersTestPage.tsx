@@ -126,6 +126,22 @@ export function CallersTestPage() {
     console.log(`Ended call with ${callerId}`);
   }, [selectedCaller]);
 
+  const handlePriorityToggle = useCallback((callerId: string, isPriority: boolean) => {
+    setCallers(prev => 
+      prev.map(caller => 
+        caller.id === callerId 
+          ? { ...caller, isPriority }
+          : caller
+      )
+    );
+    
+    if (selectedCaller?.id === callerId) {
+      setSelectedCaller(prev => prev ? { ...prev, isPriority } : null);
+    }
+    
+    console.log(`Caller ${callerId} priority set to: ${isPriority}`);
+  }, [selectedCaller]);
+
   const handleAddNote = (callerId: string, note: string) => {
     setCallers(prev => 
       prev.map(caller => 
@@ -138,6 +154,7 @@ export function CallersTestPage() {
     if (selectedCaller?.id === callerId) {
       setSelectedCaller(prev => prev ? { ...prev, notes: note } : null);
     }
+    
     console.log(`Added note to caller ${callerId}: ${note}`);
     
     // In a real app, this would save the note to your backend
@@ -171,6 +188,7 @@ export function CallersTestPage() {
             <CallerDetails
               caller={selectedCaller}
               onMuteToggle={handleMuteToggle}
+              onPriorityToggle={handlePriorityToggle}
               onPromoteToLive={handlePromoteToLive}
               onEndCall={handleEndCall}
               onAddNote={handleAddNote}

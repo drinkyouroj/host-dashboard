@@ -520,6 +520,7 @@ export default function HostDashboard() {
                   <CallerDetails 
                     caller={toUICaller(selectedCaller)}
                     onMuteToggle={handleMuteToggle}
+                    onPriorityToggle={handlePriorityToggle}
                     onPromoteToLive={handlePromoteToLive}
                     onEndCall={handleEndCall}
                     onAddNote={handleAddNote}

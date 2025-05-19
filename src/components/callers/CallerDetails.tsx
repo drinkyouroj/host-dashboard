@@ -19,6 +19,7 @@ type BaseCaller = Omit<Caller, 'status'> & {
 interface CallerDetailsProps {
   caller: BaseCaller | null;
   onMuteToggle: (callerId: string, isMuted: boolean) => void;
+  onPriorityToggle: (callerId: string, isPriority: boolean) => void;
   onPromoteToLive: (callerId: string) => void;
   onEndCall: (callerId: string) => void;
   onAddNote: (callerId: string, note: string) => void;
@@ -27,6 +28,7 @@ interface CallerDetailsProps {
 export function CallerDetails({
   caller,
   onMuteToggle,
+  onPriorityToggle,
   onPromoteToLive,
   onEndCall,
   onAddNote,
@@ -150,7 +152,7 @@ export function CallerDetails({
           leftSection={<IconStar size={16} />} 
           variant={isPriority ? 'filled' : 'outline'}
           color="yellow"
-          onClick={() => {}}
+          onClick={() => onPriorityToggle(caller.id, !isPriority)}
         >
           {isPriority ? 'Priority' : 'Make Priority'}
         </Button>
