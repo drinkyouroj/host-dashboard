@@ -19,21 +19,28 @@ import Login from './pages/Login';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
+  console.log('ProtectedRoute: Rendering');
   const { isAuthenticated, loading } = useAuth();
+  console.log('ProtectedRoute: isAuthenticated', isAuthenticated, 'loading', loading);
 
   if (loading) {
+    console.log('ProtectedRoute: Loading...');
     return <div>Loading...</div>;
   }
 
   if (!isAuthenticated) {
+    console.log('ProtectedRoute: Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
+  console.log('ProtectedRoute: Rendering protected content');
   return <>{children}</>;
 };
 
 // Main App Wrapper
-const AppContent = () => (
+const AppContent = () => {
+  console.log('AppContent: Rendering');
+  return (
   <AuthProvider>
     <ShowProvider>
       <StreamProvider>
@@ -54,15 +61,19 @@ const AppContent = () => (
       </StreamProvider>
     </ShowProvider>
   </AuthProvider>
-);
+  );
+};
 
 const queryClient = new QueryClient();
 
 function App() {
+  console.log('App: Rendering');
   const [colorScheme, setColorScheme] = useLocalStorage<'light' | 'dark'>({
     key: 'mantine-color-scheme',
     defaultValue: 'dark',
   });
+  
+  console.log('App: colorScheme', colorScheme);
 
   const toggleColorScheme = (value?: 'light' | 'dark') =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));

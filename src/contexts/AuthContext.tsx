@@ -21,6 +21,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log('AuthProvider: Initializing');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -28,9 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check for existing session on initial load
     const checkAuth = async () => {
+      console.log('AuthProvider: Checking authentication status');
       try {
         // In a real app, you would verify the session with your backend
         const token = localStorage.getItem('token');
+        console.log('AuthProvider: Found token in localStorage?', !!token);
+        
         if (token) {
           // Verify token and get user data
           // This is a mock implementation
@@ -40,12 +44,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name: 'Show Host',
             role: 'host' as const,
           };
+          console.log('AuthProvider: Setting user from token', mockUser);
           setUser(mockUser);
+        } else {
+          console.log('AuthProvider: No token found, user not authenticated');
         }
       } catch (error) {
         console.error('Auth check failed:', error);
         localStorage.removeItem('token');
       } finally {
+        console.log('AuthProvider: Finished auth check, setting loading to false');
         setLoading(false);
       }
     };
@@ -54,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    console.log('AuthProvider: Login attempt with', { email });
     try {
       // In a real app, you would make an API call to your backend
       if (email === 'host@example.com' && password === 'password') {
@@ -67,12 +76,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Mock token
         const token = 'mock-jwt-token';
         localStorage.setItem('token', token);
+        console.log('AuthProvider: Login successful, setting user and token');
         setUser(mockUser);
         navigate('/');
       } else {
+        console.log('AuthProvider: Invalid credentials');
         throw new Error('Invalid credentials');
       }
     } catch (error) {
+      console.error('AuthProvider: Login failed', error);
       showNotification({
         title: 'Login Failed',
         message: 'Invalid email or password',
