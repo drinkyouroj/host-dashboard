@@ -1,8 +1,39 @@
 # Call-In Show Host Dashboard
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/yourusername/call-in-show-dashboard/releases/tag/v0.1.0)
+
 A professional dashboard for managing live call-in shows with video streaming capabilities, built with React, TypeScript, and the Datagram SDK.
 
-![Dashboard Preview](public/dashboard-preview.png)
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Getting Started](#-getting-started)
+- [Development](#-development)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+## ✨ Features
+
+- **Authentication**
+  - Secure login system
+  - Protected routes
+  - Session management
+  
+- **Live Show Management**
+  - Start/end shows with custom names
+  - Real-time show status tracking
+  - Clean, intuitive interface
+
+- **Caller Management** (Coming in v0.2)
+  - Queue system for incoming callers
+  - Caller information tracking
+  - One-click promotion to live
+
+- **Video Streaming** (Coming in v0.3)
+  - Powered by Datagram SDK
+  - Multiple participant support
+  - Media controls (mute, camera, etc.)
 
 ## Features
 
@@ -26,29 +57,36 @@ A professional dashboard for managing live call-in shows with video streaming ca
   - Protected routes
   - Session management
 
-## Prerequisites
+## 🚀 Getting Started
 
-- Node.js 16+ (18+ recommended)
+### Prerequisites
+
+- Node.js 18+
 - npm or yarn
-- Datagram SDK credentials
+- Git
 
-## Getting Started
+### Installation
 
 1. **Clone the repository**
    ```bash
    git clone https://github.com/yourusername/call-in-show-dashboard.git
    cd call-in-show-dashboard
+   git checkout v0.1.0  # Checkout the latest stable version
    ```
 
 2. **Install dependencies**
    ```bash
    npm install
    # or
-   yarn
+   yarn install
    ```
 
 3. **Environment Setup**
-   Create a `.env` file in the root directory with your Datagram SDK credentials:
+   Create a `.env` file in the root directory with the following variables:
+   ```env
+   REACT_APP_API_URL=your_api_url_here
+   REACT_APP_DATAGRAM_API_KEY=your_api_key_here
+   ```
    ```env
    REACT_APP_DATAGRAM_API_KEY=your_api_key_here
    REACT_APP_DATAGRAM_ORIGIN=https://your-origin-here.com
@@ -121,7 +159,11 @@ The application integrates with the Datagram SDK for real-time video streaming. 
    });
    ```
 
-## Available Scripts
+## 🛠 Development
+
+### Available Scripts
+
+In the project directory, you can run:
 
 - `npm start` - Start development server
 - `npm run build` - Build for production
@@ -129,44 +171,25 @@ The application integrates with the Datagram SDK for real-time video streaming. 
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
 
-## Environment Variables
+## 🤝 Contributing
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `REACT_APP_DATAGRAM_API_KEY` | Your Datagram API key | Yes | - |
-| `REACT_APP_DATAGRAM_ORIGIN` | Your application's origin | Yes | `http://localhost:3000` |
-| `REACT_APP_API_URL` | Backend API URL | No | `http://localhost:5000` |
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-## Deployment
-
-### Building for Production
-
-```bash
-npm run build
-```
-
-This will create a `build` directory with optimized production build.
-
-### Docker
-
-A `Dockerfile` is included for containerized deployment:
-
-```bash
-docker build -t call-in-show-dashboard .
-docker run -p 3000:80 call-in-show-dashboard
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## 📧 Contact
+
+Your Name - [@your_twitter](https://twitter.com/your_twitter) - email@example.com
+
+Project Link: [https://github.com/yourusername/call-in-show-dashboard](https://github.com/yourusername/call-in-show-dashboard)
 
 ## Acknowledgments
 
