@@ -1,34 +1,22 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { showNotification } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // Mantine UI Components
 import { 
   Container, 
-  Grid, 
-  Card, 
-  Text, 
   Title, 
   Button, 
   Group, 
-  Avatar, 
   Badge, 
-  ActionIcon,
   Modal,
   TextInput,
   Stack,
-  ScrollArea,
-  Divider,
-  Paper,
-  Box,
-  useMantineTheme,
-  rem,
-  SimpleGrid,
   Tabs,
-  type MantineTheme,
-  type GridColProps,
-  type TextProps
+  Text,
+  Box,
+  Paper,
+  useMantineTheme
 } from '@mantine/core';
 
 // Tabler Icons
@@ -36,200 +24,86 @@ import {
   IconPhoneCall, 
   IconPhoneOff, 
   IconUserPlus, 
-  IconBroadcast, 
-  IconX,
-  IconVolume,
-  IconMicrophoneOff,
-  IconVideo,
-  IconVideoOff,
-  IconScreenShare,
-  IconSettings,
-  IconList,
-  IconUser,
-  IconUsers
+  IconBroadcast,
+  IconUsers,
+  IconUser
 } from '@tabler/icons-react';
 
-// App Components and Contexts
-import { useAuth } from '../contexts/AuthContext';
-import { useShow, type Caller } from '../contexts/ShowContext';
-import { CallerList } from '../components/callers/CallerList';
-import { CallerDetails } from '../components/callers/CallerDetails';
+// Components
+import { StreamProvider } from '../contexts/stream/StreamContext';
+import { CallerCard } from '../components/callers/CallerCard';
 
-// Styles
-import styles from './HostDashboard.module.css';
+// Types
+interface Caller {
+  id: string;
+  name: string;
+  email: string;
+  joinedAt: Date;
+  status: 'waiting' | 'live' | 'ended';
+}
 
-// Import shared types
-import type { UICaller } from '../types/caller';
+interface CallerState {
+  isMuted: Record<string, boolean>;
+  isPriority: Record<string, boolean>;
+  notes: Record<string, string>;
+}
 
-const CallerCard = ({ 
-  caller, 
-  onAccept, 
-  onReject, 
-  isLive = false 
-}: { 
-  caller: any, 
-  onAccept?: (id: string) => void, 
-  onReject?: (id: string) => void,
-  isLive?: boolean
-}) => {
+const HostDashboard = () => {
   const theme = useMantineTheme();
   
-  return (
-    <Card withBorder p="md" radius="md" className={styles.callerCard}>
-      <Group justify="space-between" wrap="nowrap">
-        <Group gap="sm" wrap="nowrap">
-          <Avatar size={40} color="blue" radius="xl">
-            {caller.name.charAt(0).toUpperCase()}
-          </Avatar>
-          <div>
-            <Text size="sm" fw={500}>
-              {caller.name}
-            </Text>
-            <Text size="xs" color="dimmed">
-              {caller.email || 'No email provided'}
-            </Text>
-          </div>
-        </Group>
-        {isLive ? (
-          <Badge color="red" variant="filled">
-            LIVE
-          </Badge>
-        ) : (
-          <Group gap="xs">
-            <ActionIcon 
-              color="green" 
-              variant="light"
-              onClick={() => onAccept?.(caller.id)}
-            >
-              <IconPhoneCall size={16} />
-            </ActionIcon>
-            <ActionIcon 
-              color="red" 
-              variant="light"
-              onClick={() => onReject?.(caller.id)}
-            >
-              <IconPhoneOff size={16} />
-            </ActionIcon>
-          </Group>
-        )}
-      </Group>
-      
-      {isLive && (
-        <Box mt="md" className={styles.videoContainer}>
-          <video 
-            className={styles.video}
-            autoPlay 
-            playsInline 
-            muted 
-            // In a real app, this would be the actual video stream
-            // src={caller.stream}
-          />
-          <div className={styles.controls}>
-            <ActionIcon variant="filled" size="lg" radius="xl">
-              <IconVolume size={20} />
-            </ActionIcon>
-            <ActionIcon variant="filled" size="lg" radius="xl">
-              <IconMicrophoneOff size={20} />
-            </ActionIcon>
-            <ActionIcon variant="filled" size="lg" radius="xl">
-              <IconVideoOff size={20} />
-            </ActionIcon>
-            <ActionIcon variant="filled" size="lg" radius="xl">
-              <IconScreenShare size={20} />
-            </ActionIcon>
-          </div>
-        </Box>
-      )}
-    </Card>
-  );
-};
-
-  // Helper function to calculate wait time in minutes
-  const calculateWaitTime = (joinedAt: Date): number => {
-    return Math.floor((new Date().getTime() - new Date(joinedAt).getTime()) / 60000);
-  };
-
-export default function HostDashboard() {
-  const { user, logout } = useAuth();
-  const { 
-    callers, 
-    liveCallers, 
-    addCaller, 
-    moveToLive, 
-    moveToWaiting,
-    removeCaller, 
-    updateCallerStatus,
-    currentShow,
-    startShow,
-    endShow,
-    isShowLive 
-  } = useShow();
+  // State for the show
+  const [isShowLive, setIsShowLive] = useState(false);
+  const [isStartingShow, setIsStartingShow] = useState(false);
+  const [isEndingShow, setIsEndingShow] = useState(false);
+  
+  // State for callers
+  const [callers, setCallers] = useState<Caller[]>([]);
+  const [liveCallers, setLiveCallers] = useState<Caller[]>([]);
   
   // UI State
-  const [selectedCaller, setSelectedCaller] = useState<UICaller | null>(null);
-  const [activeTab, setActiveTab] = useState<string | null>('stream');
-  const [opened, { open, close }] = useDisclosure(false);
-  
-  // Caller State
-  const [callerState, setCallerState] = useState<{
-    notes: Record<string, string>;
-    isMuted: Record<string, boolean>;
-    isPriority: Record<string, boolean>;
-  }>({
-    notes: {},
-    isMuted: {},
-    isPriority: {}
-  });
-  
-  // Form State
-  const [showName, setShowName] = useState(currentShow || 'My Awesome Show');
+  const [activeTab, setActiveTab] = useState<string | null>('callers');
   const [newCallerName, setNewCallerName] = useState('');
   const [newCallerEmail, setNewCallerEmail] = useState('');
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [selectedCaller, setSelectedCaller] = useState<Caller | null>(null);
+  const [opened, { open, close }] = useDisclosure(false);
   
-  // Combine callers from the context
-  const allCallers = [...liveCallers, ...callers];
+  // Caller state management
+  const [callerState, setCallerState] = useState<CallerState>({
+    isMuted: {},
+    isPriority: {},
+    notes: {}
+  });
 
-  const handleStartShow = () => {
-    if (!showName.trim()) {
-      showNotification({
-        title: 'Error',
-        message: 'Please enter a show name',
-        color: 'red',
-      });
-      return;
+  // Caller management functions
+  const addCaller = (caller: Caller) => {
+    setCallers(prev => [...prev, caller]);
+  };
+
+  const removeCaller = (callerId: string) => {
+    setCallers(prev => prev.filter(caller => caller.id !== callerId));
+  };
+
+  const moveToLive = (callerId: string) => {
+    const caller = callers.find(c => c.id === callerId);
+    if (caller) {
+      setLiveCallers(prev => [...prev, { ...caller, status: 'live' }]);
+      removeCaller(callerId);
     }
-    startShow(showName);
-    showNotification({
-      title: 'Show Started',
-      message: `Your show "${showName}" is now live!`,
-      color: 'green',
-    });
   };
 
-  const handleEndShow = () => {
-    endShow();
-    showNotification({
-      title: 'Show Ended',
-      message: 'Your show has ended. Thanks for broadcasting!',
-      color: 'blue',
-    });
-  };
-
+  // Event handlers
   const handleAddCaller = () => {
     if (!newCallerName.trim()) return;
     
-    const caller = addCaller({
+    const newCaller: Caller = {
+      id: `caller-${Date.now()}`,
       name: newCallerName,
       email: newCallerEmail,
-    });
+      joinedAt: new Date(),
+      status: 'waiting',
+    };
     
-    showNotification({
-      title: 'Caller Added',
-      message: `${newCallerName} has been added to the queue`,
-      color: 'green',
-    });
-    
+    addCaller(newCaller);
     setNewCallerName('');
     setNewCallerEmail('');
     close();
@@ -237,401 +111,202 @@ export default function HostDashboard() {
 
   const handleAcceptCaller = (callerId: string) => {
     moveToLive(callerId);
-    showNotification({
-      title: 'Caller Added',
-      message: 'Caller has been moved to live',
-      color: 'green',
-    });
   };
 
   const handleRejectCaller = (callerId: string) => {
     removeCaller(callerId);
-    showNotification({
-      title: 'Caller Removed',
-      message: 'Caller has been removed from the queue',
-    });
   };
 
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [callerMuteStatus, setCallerMuteStatus] = useState<Record<string, boolean>>({});
-  const [callerPriorityStatus, setCallerPriorityStatus] = useState<Record<string, boolean>>({});
-
-  const updateCallerState = useCallback((updates: Partial<typeof callerState>) => {
-    setCallerState(prev => ({
-      ...prev,
-      ...updates
-    }));
-  }, []);
-
-  const handleMuteToggle = useCallback((callerId: string, isMuted: boolean) => {
-    updateCallerState({
-      isMuted: {
-        ...callerState.isMuted,
-        [callerId]: isMuted
-      }
-    });
-    
-    // Update selected caller if it's the one being muted/unmuted
-    if (selectedCaller?.id === callerId) {
-      setSelectedCaller(prev => prev ? { 
-        ...prev, 
-        isMuted 
-      } : null);
-    }
-  }, [callerState.isMuted, selectedCaller, updateCallerState]);
-
-  const handlePriorityToggle = useCallback((callerId: string, isPriority: boolean) => {
-    console.log('Toggling priority for', callerId, 'to', isPriority);
-    
-    // Update the caller's priority in the global state
-    updateCallerState({
-      isPriority: {
-        ...callerState.isPriority,
-        [callerId]: isPriority
-      }
-    });
-    
-    // Update the selected caller if it's the one being prioritized
-    if (selectedCaller?.id === callerId) {
-      setSelectedCaller(prev => prev ? { 
-        ...prev, 
-        isPriority 
-      } : null);
-    }
-    
-    // Show a notification for better user feedback
-    const caller = allCallers.find(c => c.id === callerId);
-    if (caller) {
+  // Show management functions
+  const startShow = async () => {
+    try {
+      setIsStartingShow(true);
+      // TODO: Implement actual show start logic
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsShowLive(true);
       showNotification({
-        title: isPriority ? 'Caller Prioritized' : 'Priority Removed',
-        message: `${caller.name} ${isPriority ? 'added to' : 'removed from'} priority`,
-        color: isPriority ? 'yellow' : 'gray'
+        title: 'Show Started',
+        message: 'Your show is now live!',
+        color: 'green',
       });
-    }
-  }, [callerState.isPriority, selectedCaller, updateCallerState, allCallers]);
-
-  const handlePromoteToLive = useCallback((callerId: string) => {
-    moveToLive(callerId);
-    showNotification({
-      title: 'Caller Promoted',
-      message: 'Caller has been moved to live',
-      color: 'green',
-    });
-  }, [moveToLive]);
-
-  const handleTakeOffAir = useCallback((callerId: string) => {
-    moveToWaiting(callerId);
-    showNotification({
-      title: 'Caller Taken Off Air',
-      message: 'The caller has been moved back to the waiting queue',
-      color: 'yellow',
-    });
-  }, [moveToWaiting]);
-
-  const handleEndCall = useCallback((callerId: string) => {
-    // Remove the caller from the list
-    removeCaller(callerId);
-    
-    // Clean up local state
-    const { [callerId]: _, ...remainingMuted } = callerState.isMuted;
-    const { [callerId]: __, ...remainingPriority } = callerState.isPriority;
-    const { [callerId]: ___, ...remainingNotes } = callerState.notes;
-    
-    updateCallerState({
-      isMuted: remainingMuted,
-      isPriority: remainingPriority,
-      notes: remainingNotes
-    });
-    
-    // If the selected caller is the one being removed, clear selection
-    if (selectedCaller?.id === callerId) {
-      setSelectedCaller(null);
-    }
-    
-    const caller = allCallers.find(c => c.id === callerId);
-    if (caller) {
+    } catch (error) {
       showNotification({
-        title: 'Call Ended',
-        message: `Call with ${caller.name} has been ended`,
-        color: 'blue',
+        title: 'Error',
+        message: 'Failed to start show. Please try again.',
+        color: 'red',
       });
+    } finally {
+      setIsStartingShow(false);
     }
-  }, [allCallers, callerState.isMuted, callerState.isPriority, callerState.notes, removeCaller, selectedCaller, updateCallerState]);
+  };
 
-  const handleAddNote = useCallback((callerId: string, note: string) => {
-    updateCallerState({
-      notes: {
-        ...callerState.notes,
-        [callerId]: note
-      }
-    });
-    
-    // Update selected caller's note if it's the one being updated
-    if (selectedCaller?.id === callerId) {
-      setSelectedCaller(prev => prev ? { 
-        ...prev, 
-        notes: note 
-      } : null);
+  const endShow = async () => {
+    try {
+      setIsEndingShow(true);
+      // TODO: Implement actual show end logic
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsShowLive(false);
+      showNotification({
+        title: 'Show Ended',
+        message: 'Your show has ended successfully.',
+        color: 'green',
+      });
+    } catch (error) {
+      showNotification({
+        title: 'Error',
+        message: 'Failed to end show. Please try again.',
+        color: 'red',
+      });
+    } finally {
+      setIsEndingShow(false);
     }
-    
-    showNotification({
-      title: 'Note Added',
-      message: 'Note has been saved',
-      color: 'green',
-    });
-  }, [callerState.notes, selectedCaller, updateCallerState]);
+  };
 
-  // Helper function to convert Caller to UICaller for display
-  const toUICaller = useCallback((caller: Caller | UICaller): UICaller => {
-    // Get the current state for this caller
-    const callerMuted = callerState.isMuted[caller.id] || false;
-    const callerPriority = callerState.isPriority[caller.id] || false;
-    const callerNotes = callerState.notes[caller.id] || '';
-    
-    // If it's already a UICaller, return it with updated waitTime and state
-    if ('phoneNumber' in caller) {
-      return {
-        ...caller,
-        waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
-        displayStatus: caller.displayStatus || 
-          (caller.status === 'live' ? 'On Air' : 
-           caller.status === 'waiting' ? 'Waiting' :
-           caller.status === 'rejected' ? 'Rejected' :
-           caller.status),
-        isMuted: callerMuted,
-        isPriority: callerPriority,
-        notes: callerNotes
-      };
-    }
-
-    // Convert from Caller to UICaller
-    const statusMap = {
-      'live': 'On Air',
-      'waiting': 'Waiting',
-      'rejected': 'Rejected'
-    } as const;
-
-    // Ensure the status is one of the expected values
-    const status: 'live' | 'waiting' | 'rejected' = 
-      (caller.status === 'live' || caller.status === 'waiting' || caller.status === 'rejected')
-        ? caller.status
-        : 'waiting';
-
-    return {
-      // Required Caller properties
-      id: caller.id,
-      name: caller.name,
-      email: caller.email,
-      joinedAt: caller.joinedAt,
-      status: status,
-      connectionId: caller.connectionId,
-      
-      // UICaller specific properties with state from callerState
-      phoneNumber: caller.phone || 'Unknown',
-      waitTime: Math.floor((new Date().getTime() - new Date(caller.joinedAt).getTime()) / 60000),
-      displayStatus: statusMap[status] || status,
-      isMuted: callerMuted,
-      isPriority: callerPriority,
-      notes: callerNotes
-    };
-  }, [callerState]);
-  
-  // Convert all callers to UICaller objects
-  const allUICallers = useMemo(() => {
-    return allCallers.map(caller => toUICaller(caller));
-  }, [allCallers, toUICaller]);
-
-  const handleSelectCaller = useCallback((caller: UICaller) => {
-    // Find the latest version of this caller from allUICallers
-    const latestCaller = allUICallers.find(c => c.id === caller.id) || caller;
-    setSelectedCaller(latestCaller);
-  }, [allUICallers]);
-
-  // In a real app, we would set up WebRTC connections here
-  useEffect(() => {
-    // This is where we would initialize the Datagram SDK
-    // and set up the video streams
-    
-    // For demo purposes, we'll just log the current state
-    console.log('Live callers:', liveCallers);
-    
   return (
-    <Container size="xl" py="md" className={styles.dashboardContainer}>
-      <header className={styles.header}>
-        <Group justify="space-between" align="center">
-          <Title order={2} className={styles.title}>
+    <StreamProvider>
+      <Container size="xl" py="md">
+        {/* Header Section */}
+        <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md }}>
+          <Title order={2}>
             {isShowLive ? (
               <Group gap="xs">
-                <Badge color="red" variant="filled">LIVE</Badge>
-                <span>Show in Progress</span>
+                <Badge color="red" variant="filled" size="lg">LIVE</Badge>
+                <Text>Show in Progress</Text>
               </Group>
             ) : (
               'Host Dashboard'
             )}
           </Title>
-          {isShowLive ? (
+          
+          <Group>
             <Button 
-              leftSection={<IconUserPlus size={18} />} 
-              variant="outline"
+              leftSection={<IconUserPlus size={16} />}
               onClick={open}
+              variant="outline"
             >
               Add Caller
             </Button>
-            <Button 
-              variant="subtle" 
-              onClick={logout}
-              leftSection={<IconSettings size={18} />}
-            >
-              Settings
-            </Button>
+            
+            {isShowLive ? (
+              <Button 
+                variant="outline" 
+                color="red" 
+                leftSection={<IconPhoneOff size={16} />}
+                onClick={endShow}
+                loading={isEndingShow}
+              >
+                End Show
+              </Button>
+            ) : (
+              <Button 
+                leftSection={<IconBroadcast size={16} />}
+                onClick={startShow}
+                loading={isStartingShow}
+              >
+                Start Show
+              </Button>
+            )}
           </Group>
-        </Group>
-      </header>
-
-      {isShowLive ? (
-        <Tabs 
-          value={activeTab} 
-          onChange={setActiveTab}
-          defaultValue="callers"
-          mt="md"
-        >
+        </Box>
+        
+        {/* Main Content */}
+        <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List>
             <Tabs.Tab value="callers" leftSection={<IconUsers size={14} />}>
-              Call Management
+              Callers
             </Tabs.Tab>
-            <Tabs.Tab value="legacy" leftSection={<IconList size={14} />}>
-              Legacy View
+            <Tabs.Tab value="live" leftSection={<IconBroadcast size={14} />}>
+              Live Stream
             </Tabs.Tab>
           </Tabs.List>
-
+          
           <Tabs.Panel value="callers" pt="md">
-            <Grid>
-              <Grid.Col span={{ base: 12, md: 5 }}>
-                <Paper p="md" withBorder h="100%">
-                  <Group justify="space-between" mb="md">
-                    <Text fw={600}>Call Queue</Text>
-                    <Text size="sm" c="dimmed">
-                      {callers.length} waiting • {liveCallers.length} on air
-                    </Text>
-                  </Group>
-                  <CallerList 
-                    callers={allUICallers}
-                    onSelectCaller={handleSelectCaller}
-                    onMuteToggle={handleMuteToggle}
-                    onPromoteToLive={handlePromoteToLive}
-                    onEndCall={handleEndCall}
-                  />
-                </Paper>
-              </Grid.Col>
-              
-              <Grid.Col span={{ base: 12, md: 7 }}>
-                <Paper p="md" withBorder h="100%">
-                  <Text fw={600} mb="md">Caller Details</Text>
-                  {selectedCaller && (
-                <Card withBorder h="100%">
-                  <Text fw={500} mb="md">Live Callers ({liveCallers.length})</Text>
-                  <ScrollArea h={300}>
-                    <Stack gap="xs">
-                      {liveCallers.length > 0 ? (
-                        liveCallers.map((caller) => (
-                          <CallerCard 
-                            key={caller.id}
-                            caller={caller}
-                            isLive
-                            onReject={handleRejectCaller}
-                          />
-                        ))
-                      ) : (
-                        <Text size="sm" c="dimmed" ta="center" py="md">
-                          No live callers
-                        </Text>
-                      )}
-                    </Stack>
-                  </ScrollArea>
-                </Card>
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 4 }}>
-                <Card withBorder h="100%">
-                  <Text fw={500} mb="md">Call Queue ({callers.length})</Text>
-                  <ScrollArea h={300}>
-                    <Stack gap="xs">
-                      {callers.length > 0 ? (
-                        callers.map((caller) => (
+            <Paper p="md" withBorder>
+              {callers.length > 0 ? (
+                <Stack gap="md">
+                  {callers.map(caller => (
+                    <CallerCard
+                      key={caller.id}
+                      caller={caller}
+                      onAccept={() => handleAcceptCaller(caller.id)}
+                      onReject={() => handleRejectCaller(caller.id)}
+                    />
+                  ))}
+                </Stack>
+              ) : (
+                <Text ta="center" c="dimmed" py="xl">
+                  No callers waiting
+                </Text>
+              )}
+            </Paper>
+          </Tabs.Panel>
+          
+          <Tabs.Panel value="live" pt="md">
+            <Paper p="md" withBorder>
+              {isShowLive ? (
+                <Stack>
+                  <Text>Live stream will be displayed here</Text>
+                  {liveCallers.length > 0 && (
+                    <div>
+                      <Text size="sm" c="dimmed" mb="sm">Live Callers</Text>
+                      <Stack gap="md">
+                        {liveCallers.map(caller => (
                           <CallerCard
                             key={caller.id}
                             caller={caller}
-                            onAccept={handleAcceptCaller}
-                            onReject={handleRejectCaller}
+                            isLive
                           />
-                        ))
-                      ) : (
-                        <Text size="sm" c="dimmed" ta="center" py="md">
-                          No callers in queue
-                        </Text>
-                      )}
-                    </Stack>
-                  </ScrollArea>
-                </Card>
-              </Grid.Col>
-            </Grid>
-          </TabsPanel>
-
-          <TabsPanel value="stream" pt="md">
-            <StreamView isHost={true} />
-          </TabsPanel>
+                        ))}
+                      </Stack>
+                    </div>
+                  )}
+                </Stack>
+              ) : (
+                <Text ta="center" c="dimmed" py="xl">
+                  Start the show to go live
+                </Text>
+              )}
+            </Paper>
+          </Tabs.Panel>
         </Tabs>
-      ) : (
-        <Paper p="xl" withBorder>
-          <Stack align="center" spacing="md">
-            <IconBroadcast size={48} stroke={1.5} />
-            <Title order={3}>No Active Show</Title>
-            <Text c="dimmed" ta="center">
-              Start a new show to begin managing callers and broadcasting live.
-            </Text>
-            <Button 
-              leftSection={<IconBroadcast size={16} />} 
-              onClick={handleStartShow}
-              loading={isStartingShow}
-              mt="md"
-            >
-              Start Show
-            </Button>
+        
+        {/* Add Caller Modal */}
+        <Modal 
+          opened={opened} 
+          onClose={close}
+          title="Add Caller"
+          size="md"
+        >
+          <Stack gap="md">
+            <TextInput
+              label="Caller Name"
+              placeholder="Enter caller's name"
+              value={newCallerName}
+              onChange={(e) => setNewCallerName(e.currentTarget.value)}
+              required
+            />
+            <TextInput
+              label="Email or Phone"
+              placeholder="Enter email or phone number"
+              value={newCallerEmail}
+              onChange={(e) => setNewCallerEmail(e.currentTarget.value)}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="default" onClick={close}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAddCaller} 
+                disabled={!newCallerName.trim()}
+              >
+                Add Caller
+              </Button>
+            </Group>
           </Stack>
-        </Paper>
-      )}
+        </Modal>
       </Container>
-      
-      {/* Add Caller Modal */}
-      <Modal 
-        opened={opened} 
-        onClose={close}
-        title="Add Caller"
-        size="md"
-      >
-        <Stack>
-          <TextInput
-            label="Caller Name"
-            placeholder="Enter caller's name"
-            value={newCallerName}
-            onChange={(e) => setNewCallerName(e.currentTarget.value)}
-            required
-          />
-          <TextInput
-            label="Email or Phone"
-            placeholder="Enter email or phone number"
-            value={newCallerEmail}
-            onChange={(e) => setNewCallerEmail(e.currentTarget.value)}
-          />
-          <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={close}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCaller} disabled={!newCallerName.trim()}>
-              Add Caller
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
-    </Container>
+    </StreamProvider>
   );
-}
+};
+
+export default HostDashboard;
