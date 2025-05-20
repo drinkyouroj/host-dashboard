@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { showNotification } from '@mantine/notifications';
 import { useDisclosure } from '@mantine/hooks';
+import { StreamView } from '../components/stream/StreamView';
 
 // Mantine UI Components
 import { 
@@ -28,10 +29,6 @@ import {
   IconUsers,
   IconUser
 } from '@tabler/icons-react';
-
-// Components
-import { StreamProvider } from '../contexts/stream/StreamContext';
-import { CallerCard } from '../components/callers/CallerCard';
 
 // Types
 interface Caller {
@@ -77,10 +74,18 @@ const HostDashboard = () => {
   // Caller management functions
   const addCaller = (caller: Caller) => {
     setCallers(prev => [...prev, caller]);
+    showNotification({
+      title: 'Caller Added',
+      message: `${caller.name} has been added to the queue`,
+      color: 'green',
+    });
   };
 
   const removeCaller = (callerId: string) => {
-    setCallers(prev => prev.filter(caller => caller.id !== callerId));
+    setCallers(prev => {
+      const updated = prev.filter(caller => caller.id !== callerId);
+      return updated;
+    });
   };
 
   const moveToLive = (callerId: string) => {
@@ -108,17 +113,26 @@ const HostDashboard = () => {
   };
 
   // Event handlers
-  const handleAddCaller = () => {
-    if (!newCallerName.trim()) return;
+  const handleAddCaller = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCallerName.trim() || !newCallerEmail.trim()) {
+      showNotification({
+        title: 'Error',
+        message: 'Please fill in all fields',
+        color: 'red',
+      });
+      return;
+    }
     
     const newCaller: Caller = {
       id: `caller-${Date.now()}`,
-      name: newCallerName,
-      email: newCallerEmail,
+      name: newCallerName.trim(),
+      email: newCallerEmail.trim(),
       joinedAt: new Date(),
-      status: 'waiting',
+      status: 'waiting'
     };
     
+    console.log('Adding new caller:', newCaller);
     addCaller(newCaller);
     setNewCallerName('');
     setNewCallerEmail('');
@@ -179,8 +193,7 @@ const HostDashboard = () => {
   };
 
   return (
-    <StreamProvider>
-      <Container size="xl" py="md">
+    <Container size="xl" py="md">
         {/* Header Section */}
         <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md }}>
           <Title order={2}>
@@ -238,22 +251,39 @@ const HostDashboard = () => {
           
           <Tabs.Panel value="callers" pt="md">
             <Paper p="md" withBorder>
-              {callers.length > 0 ? (
-                <Stack gap="md">
-                  {callers.map(caller => (
-                    <CallerCard
-                      key={caller.id}
-                      caller={caller}
-                      onAccept={() => handleAcceptCaller(caller.id)}
-                      onReject={() => handleRejectCaller(caller.id)}
-                    />
-                  ))}
-                </Stack>
-              ) : (
-                <Text ta="center" c="dimmed" py="xl">
-                  No callers waiting
-                </Text>
-              )}
+              <Group justify="space-between" mb="md">
+                <Title order={3}>Callers</Title>
+                <Button 
+                  leftSection={<IconUserPlus size={16} />}
+                  onClick={open}
+                >
+                  Add Caller
+                </Button>
+              </Group>
+              
+              <Stack gap="sm">
+                {callers.length === 0 ? (
+                  <Text c="dimmed" ta="center" py="md">No callers in the queue</Text>
+                ) : (
+                  callers.map(caller => (
+                    <Paper key={caller.id} p="md" withBorder>
+                      <Group justify="space-between">
+                        <div>
+                          <Text fw={500}>{caller.name}</Text>
+                          <Text size="sm" c="dimmed">{caller.email}</Text>
+                        </div>
+                        <Button 
+                          size="xs" 
+                          onClick={() => moveToLive(caller.id)}
+                          disabled={!isShowLive}
+                        >
+                          Move to Live
+                        </Button>
+                      </Group>
+                    </Paper>
+                  ))
+                )}
+              </Stack>
             </Paper>
           </Tabs.Panel>
           
@@ -261,27 +291,40 @@ const HostDashboard = () => {
             <Paper p="md" withBorder>
               {isShowLive ? (
                 <Stack>
-                  <Text>Live stream will be displayed here</Text>
+                  <StreamView showControls={true} />
                   {liveCallers.length > 0 && (
                     <div>
                       <Text size="sm" c="dimmed" mb="sm">Live Callers</Text>
                       <Stack gap="md">
                         {liveCallers.map(caller => (
-                          <CallerCard
-                            key={caller.id}
-                            caller={caller}
-                            isLive
-                            onReturnToQueue={() => returnToQueue(caller.id)}
-                          />
+                          <Paper key={caller.id} p="md" withBorder>
+                            <Text>{caller.name}</Text>
+                            <Text size="sm" c="dimmed">{caller.email}</Text>
+                            <Button 
+                              size="xs" 
+                              variant="outline" 
+                              mt="sm"
+                              onClick={() => returnToQueue(caller.id)}
+                            >
+                              Return to Queue
+                            </Button>
+                          </Paper>
                         ))}
                       </Stack>
                     </div>
                   )}
                 </Stack>
               ) : (
-                <Text ta="center" c="dimmed" py="xl">
-                  Start the show to go live
-                </Text>
+                <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+                  <Text size="lg" mb="md" c="dimmed">Start the show to go live</Text>
+                  <Button 
+                    leftSection={<IconBroadcast size={16} />}
+                    onClick={startShow}
+                    loading={isStartingShow}
+                  >
+                    Start Show
+                  </Button>
+                </Box>
               )}
             </Paper>
           </Tabs.Panel>
@@ -294,35 +337,29 @@ const HostDashboard = () => {
           title="Add Caller"
           size="md"
         >
-          <Stack gap="md">
-            <TextInput
-              label="Caller Name"
-              placeholder="Enter caller's name"
-              value={newCallerName}
-              onChange={(e) => setNewCallerName(e.currentTarget.value)}
-              required
-            />
-            <TextInput
-              label="Email or Phone"
-              placeholder="Enter email or phone number"
-              value={newCallerEmail}
-              onChange={(e) => setNewCallerEmail(e.currentTarget.value)}
-            />
-            <Group justify="flex-end" mt="md">
-              <Button variant="default" onClick={close}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleAddCaller} 
-                disabled={!newCallerName.trim()}
-              >
+          <form onSubmit={handleAddCaller}>
+            <Stack gap="md">
+              <TextInput
+                label="Caller Name"
+                placeholder="Enter caller's name"
+                value={newCallerName}
+                onChange={(e) => setNewCallerName(e.currentTarget.value)}
+                required
+              />
+              <TextInput
+                label="Email or Phone"
+                placeholder="Enter email or phone number"
+                value={newCallerEmail}
+                onChange={(e) => setNewCallerEmail(e.currentTarget.value)}
+                required
+              />
+              <Button type="submit" fullWidth>
                 Add Caller
               </Button>
-            </Group>
-          </Stack>
+            </Stack>
+          </form>
         </Modal>
       </Container>
-    </StreamProvider>
   );
 };
 

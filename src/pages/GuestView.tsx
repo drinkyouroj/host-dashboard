@@ -56,7 +56,7 @@ export function GuestView() {
   }
 
   return (
-    <StreamProvider isHost={false}>
+    <StreamProvider>
       <Container fluid p={0} style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Box p="md" style={{ borderBottom: '1px solid #e9ecef' }}>
           <Group justify="space-between">

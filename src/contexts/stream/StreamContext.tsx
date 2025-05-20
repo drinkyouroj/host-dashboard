@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode, type FC } from 'react';
 import { showNotification } from '@mantine/notifications';
 
 type IceServer = {
@@ -20,11 +20,16 @@ type Participant = {
   connection?: RTCPeerConnection;
 };
 
+type StreamProviderProps = {
+  children: ReactNode;
+};
+
 interface StreamContextType {
   localStream: MediaStream | null;
   participants: Participant[];
   isStreaming: boolean;
   isConnected: boolean;
+  isHost: boolean;
   startStream: (constraints?: StreamConstraints) => Promise<void>;
   stopStream: () => void;
   connectToPeer: (peerId: string) => Promise<RTCPeerConnection | undefined>;
@@ -48,7 +53,19 @@ const defaultIceServers: IceServer[] = [
   // Add your TURN servers here if needed
 ];
 
-export function StreamProvider({ children, isHost = false }: { children: ReactNode; isHost?: boolean }) {
+// StreamProvider component
+export const StreamProvider: React.FC<StreamProviderProps> = ({ children }) => {
+  const [isHost, setIsHost] = useState(window.location.pathname === '/');
+  
+  // Update isHost when the route changes
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setIsHost(window.location.pathname === '/');
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    return () => window.removeEventListener('popstate', handleRouteChange);
+  }, []);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -124,23 +141,22 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
     return pc;
   }, [localStream]);
 
-  // Initialize local stream
-  const initializeLocalStream = useCallback(async (constraints: StreamConstraints = { 
-    video: true, 
-    audio: true 
-  }) => {
+  // Initialize local media stream
+  const initializeLocalStream = useCallback(async (constraints: StreamConstraints = { video: true, audio: true }) => {
     try {
+      console.log('Requesting media with constraints:', constraints);
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: constraints.video || true,
-        audio: constraints.audio || true,
+        video: constraints.video,
+        audio: constraints.audio,
       });
       
+      console.log('Successfully got media stream');
       setLocalStream(stream);
-      setVideoEnabled(!!constraints.video);
-      setAudioEnabled(!!constraints.audio);
+      setVideoEnabled(true);
+      setAudioEnabled(true);
       
+      // Add host as a participant
       if (isHost) {
-        // Add host as a participant
         setParticipants(prev => [
           ...prev.filter(p => p.id !== 'local'),
           { 
@@ -152,20 +168,54 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
           }
         ]);
       }
+      
+      return stream;
     } catch (error) {
       console.error('Error accessing media devices:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       showNotification({
-        title: 'Error',
-        message: 'Could not access camera or microphone',
+        title: 'Media Error',
+        message: `Could not access camera or microphone: ${errorMessage}`,
         color: 'red',
       });
+      throw error; // Re-throw to allow handling in the startStream function
     }
   }, [isHost, createPeerConnection]);
 
   // Start streaming
   const startStream = useCallback(async () => {
-    if (!localStream) {
-      await initializeLocalStream();
+    try {
+      console.log('Starting stream...');
+      
+      // Always initialize a new stream to ensure we have the latest permissions
+      const stream = await initializeLocalStream();
+      
+      // Set the stream and update state
+      setLocalStream(stream);
+      setIsStreaming(true);
+      
+      // Add the host as a participant if not already added
+      const hostExists = participants.some(p => p.id === 'local');
+      if (isHost && !hostExists && stream) {
+        console.log('Adding host as participant');
+        await addParticipant('local', 'Host', true);
+      }
+      
+      showNotification({
+        title: 'Success',
+        message: 'Stream started successfully',
+        color: 'green',
+      });
+    } catch (error) {
+      console.error('Failed to start stream:', error);
+      // Re-throw to allow error handling in the UI
+      throw error;
+      showNotification({
+        title: 'Stream Error',
+        message: 'Failed to start stream. Please check your camera and microphone permissions.',
+        color: 'red',
+      });
+      throw error;
     }
   }, [initializeLocalStream, localStream]);
 
@@ -445,6 +495,7 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
         participants,
         isStreaming,
         isConnected,
+        isHost,
         startStream,
         stopStream,
         connectToPeer,
@@ -465,10 +516,19 @@ export function StreamProvider({ children, isHost = false }: { children: ReactNo
   );
 }
 
+// Export the context
+export { StreamContext };
+
+// useStream hook
 export function useStream() {
   const context = useContext(StreamContext);
   if (!context) {
-    throw new Error('useStream must be used within a StreamProvider');
+    throw new Error(
+      'useStream must be used within a StreamProvider. ' +
+      'Make sure you have a StreamProvider higher up in your component tree.'
+    );
   }
   return context;
 }
+
+export default StreamProvider;

@@ -11,11 +11,12 @@ import React, { ReactElement } from 'react';
 // Import context providers
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ShowProvider } from './contexts/ShowContext';
-import { StreamProvider } from './contexts/StreamContext';
+import StreamProvider from './contexts/stream/StreamContext';
 
 // Import components
 import HostDashboard from './pages/HostDashboard';
 import Login from './pages/Login';
+import { GuestView } from './pages/GuestView';
 import { CallersTestPage } from './pages/CallersTestPage';
 
 // Protected Route Component
@@ -41,12 +42,14 @@ const ProtectedRoute = ({ children }: { children: ReactElement }) => {
 // Main App Wrapper
 const AppContent = () => {
   console.log('AppContent: Rendering');
+  
   return (
     <AuthProvider>
       <ShowProvider>
         <StreamProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/guest" element={<GuestView />} />
             <Route
               path="/"
               element={
@@ -130,18 +133,20 @@ function App() {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <MantineProvider
-        theme={theme}
-        defaultColorScheme="dark"
-      >
-        <GlobalStyles />
-        <ModalsProvider>
-          <Notifications position="top-right" />
-          <AppContent />
-        </ModalsProvider>
-      </MantineProvider>
-    </QueryClientProvider>
+    <Router>
+      <QueryClientProvider client={queryClient}>
+        <MantineProvider
+          theme={theme}
+          defaultColorScheme="dark"
+        >
+          <GlobalStyles />
+          <ModalsProvider>
+            <Notifications position="top-right" />
+            <AppContent />
+          </ModalsProvider>
+        </MantineProvider>
+      </QueryClientProvider>
+    </Router>
   );
 }
 

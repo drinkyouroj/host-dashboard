@@ -14,7 +14,6 @@ import {
 import { useCallback, useState } from 'react';
 
 interface StreamViewProps {
-  isHost?: boolean;
   className?: string;
   showControls?: boolean;
   onStreamStart?: () => void;
@@ -22,12 +21,53 @@ interface StreamViewProps {
 }
 
 export function StreamView({ 
-  isHost = false, 
   className = '',
   showControls = true,
   onStreamStart,
   onStreamStop
 }: StreamViewProps) {
+  const [isStarting, setIsStarting] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  
+  // Get the stream context - this must be called unconditionally
+  const streamContext = useStream();
+  
+  // Handle stream start/stop - define callbacks at the top level
+  const handleStartStream = useCallback(async () => {
+    if (!streamContext) return;
+    try {
+      setIsStarting(true);
+      await streamContext.startStream();
+      onStreamStart?.();
+    } catch (error) {
+      console.error('Failed to start stream:', error);
+    } finally {
+      setIsStarting(false);
+    }
+  }, [streamContext, onStreamStart]);
+
+  const handleStopStream = useCallback(async () => {
+    if (!streamContext) return;
+    try {
+      setIsStopping(true);
+      await streamContext.stopStream();
+      onStreamStop?.();
+    } catch (error) {
+      console.error('Failed to stop stream:', error);
+    } finally {
+      setIsStopping(false);
+    }
+  }, [streamContext, onStreamStop]);
+
+  // Handle the case where stream context is not available
+  if (!streamContext) {
+    return (
+      <Box p="md" style={{ textAlign: 'center' }}>
+        <Text color="red">Error initializing stream. Please refresh the page.</Text>
+      </Box>
+    );
+  }
+
   const { 
     participants, 
     videoEnabled, 
@@ -35,40 +75,11 @@ export function StreamView({
     isScreenSharing,
     isStreaming,
     isConnected,
-    startStream,
-    stopStream,
     toggleVideo,
     toggleAudio,
-    toggleScreenShare
-  } = useStream();
-
-  const [isStarting, setIsStarting] = useState(false);
-  const [isStopping, setIsStopping] = useState(false);
-
-  // Handle stream start/stop
-  const handleStartStream = useCallback(async () => {
-    try {
-      setIsStarting(true);
-      await startStream();
-      onStreamStart?.();
-    } catch (error) {
-      console.error('Failed to start stream:', error);
-    } finally {
-      setIsStarting(false);
-    }
-  }, [startStream, onStreamStart]);
-
-  const handleStopStream = useCallback(async () => {
-    try {
-      setIsStopping(true);
-      stopStream();
-      onStreamStop?.();
-    } catch (error) {
-      console.error('Failed to stop stream:', error);
-    } finally {
-      setIsStopping(false);
-    }
-  }, [stopStream, onStreamStop]);
+    toggleScreenShare,
+    isHost
+  } = streamContext;
 
   // Filter out the local participant from the remote participants
   const remoteParticipants = participants.filter(p => p.id !== 'local');
